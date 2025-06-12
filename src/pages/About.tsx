@@ -47,12 +47,12 @@ const About = () => {
       description: t('about.team.gaurav.desc'),
     },
     {
-      name: 'Rajesh Kumar',
+      name: 'Kunwar Aditya Singh',
       role: t('about.team.rajesh.role'),
       description: t('about.team.rajesh.desc'),
     },
     {
-      name: 'Anita Patel',
+      name: 'Funtastic Four',
       role: t('about.team.anita.role'),
       description: t('about.team.anita.desc'),
     },
