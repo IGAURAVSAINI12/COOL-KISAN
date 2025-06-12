@@ -11,6 +11,7 @@ import About from './pages/About';
 import Login from './pages/Login';
 import Payment from './pages/Payment';
 import MapView from './pages/MapView';
+import ContactUs from './pages/ContactUs';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/payment" element={<Payment />} />
             <Route path="/map" element={<MapView />} />
+            <Route path="/contact" element={<ContactUs />} />
           </Routes>
         </div>
       </Router>

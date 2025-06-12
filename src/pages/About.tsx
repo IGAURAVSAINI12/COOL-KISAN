@@ -360,7 +360,7 @@ const About = () => {
               {t('about.cta.farmer')}
             </Link>
             <Link
-              to="/login?type=farmer"
+              to="/contact"
               className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300 shadow-lg"
             >
               {t('about.cta.contact')}
