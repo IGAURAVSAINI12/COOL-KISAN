@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
   Clock, 
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 
 const FarmerApp = () => {
+  const navigate = useNavigate();
   const [milkVolume, setMilkVolume] = useState('');
   const [duration, setDuration] = useState('8');
   const [selectedChiller, setSelectedChiller] = useState(null);
@@ -60,6 +62,41 @@ const FarmerApp = () => {
     if (!milkVolume || !selectedChiller) return 0;
     const baseRate = parseFloat(selectedChiller.rate.replace('₹', '').replace('/L', ''));
     return (baseRate * parseFloat(milkVolume)).toFixed(2);
+  };
+
+  const handleBooking = () => {
+    // Validate inputs
+    if (!milkVolume || parseFloat(milkVolume) <= 0) {
+      alert('Please enter a valid milk volume');
+      return;
+    }
+    
+    if (!selectedChiller) {
+      alert('Please select a chiller');
+      return;
+    }
+
+    // Store booking data for payment page
+    const bookingData = {
+      type: 'pay-per-use',
+      chiller: selectedChiller.name,
+      owner: selectedChiller.owner,
+      distance: selectedChiller.distance,
+      volume: `${milkVolume}L`,
+      duration: `${duration} hours`,
+      rate: selectedChiller.rate,
+      subtotal: parseFloat(calculateCost()),
+      platformFee: Math.round(parseFloat(calculateCost()) * 0.1),
+      total: Math.round(parseFloat(calculateCost()) * 1.1),
+      rating: selectedChiller.rating,
+      temperature: selectedChiller.temperature
+    };
+
+    // Store in localStorage for payment page
+    localStorage.setItem('selectedBooking', JSON.stringify(bookingData));
+    
+    // Navigate to payment page
+    navigate('/payment');
   };
 
   return (
@@ -221,6 +258,7 @@ const FarmerApp = () => {
                   </div>
 
                   <button
+                    onClick={handleBooking}
                     className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!milkVolume || parseFloat(milkVolume) <= 0}
                   >

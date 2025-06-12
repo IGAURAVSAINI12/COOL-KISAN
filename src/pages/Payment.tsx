@@ -33,8 +33,12 @@ const Payment = () => {
   useEffect(() => {
     const selectedTier = localStorage.getItem('selectedTier');
     const selectedSubscription = localStorage.getItem('selectedSubscription');
+    const selectedBooking = localStorage.getItem('selectedBooking');
     
-    if (selectedTier) {
+    if (selectedBooking) {
+      const bookingInfo = JSON.parse(selectedBooking);
+      setBookingData(bookingInfo);
+    } else if (selectedTier) {
       const tierData = JSON.parse(selectedTier);
       setBookingData({
         type: 'pay-per-use',
@@ -94,6 +98,7 @@ const Payment = () => {
       // Clear stored data after successful payment
       localStorage.removeItem('selectedTier');
       localStorage.removeItem('selectedSubscription');
+      localStorage.removeItem('selectedBooking');
     }, 3000);
   };
 
