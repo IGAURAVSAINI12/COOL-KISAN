@@ -30,7 +30,7 @@ const HomePage = () => {
       icon: <Clock className="h-8 w-8 text-green-600" />,
       title: 'Flexible Timing',
       description: 'Book for hours, days, or ongoing basis based on your needs',
-      action: () => navigate('/farmer'),
+      action: () => navigate('/login?type=farmer'),
       buttonText: 'Book Now'
     },
     {
@@ -51,7 +51,7 @@ const HomePage = () => {
       icon: <Smartphone className="h-8 w-8 text-red-600" />,
       title: 'Easy QR Check-in',
       description: 'Simple QR code scanning for quick chiller access',
-      action: () => navigate('/farmer'),
+      action: () => navigate('/login?type=farmer'),
       buttonText: 'Get QR Code'
     },
     {
@@ -90,14 +90,14 @@ const HomePage = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link
-                  to="/login"
+                  to="/login?type=farmer"
                   className="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group"
                 >
                   Start as Farmer
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
-                  to="/chiller-owner"
+                  to="/login?type=chiller-owner"
                   className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-300 transform hover:scale-105"
                 >
                   List Your Chiller
@@ -260,7 +260,7 @@ const HomePage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              to="/login"
+              to="/login?type=farmer"
               className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105"
             >
               Get Started Today

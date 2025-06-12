@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Mail, 
   Lock, 
@@ -12,15 +12,21 @@ import {
 } from 'lucide-react';
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Get user type from URL params or default to farmer
+  const userTypeFromUrl = searchParams.get('type') || 'farmer';
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
-    userType: 'farmer'
+    userType: userTypeFromUrl
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -34,6 +40,29 @@ const Login = () => {
     e.preventDefault();
     // Handle login/signup logic here
     console.log('Form submitted:', formData);
+    
+    // Redirect based on user type after successful login
+    if (formData.userType === 'farmer') {
+      navigate('/farmer');
+    } else if (formData.userType === 'chiller-owner') {
+      navigate('/chiller-owner');
+    }
+  };
+
+  const getUserTypeTitle = () => {
+    return formData.userType === 'farmer' ? 'Farmer' : 'Chiller Owner';
+  };
+
+  const getUserTypeDescription = () => {
+    if (formData.userType === 'farmer') {
+      return isLogin 
+        ? 'Access your farmer dashboard and book chillers'
+        : 'Join thousands of farmers preserving milk quality';
+    } else {
+      return isLogin
+        ? 'Manage your chillers and track earnings'
+        : 'Start earning by listing your chiller';
+    }
   };
 
   return (
@@ -48,18 +77,40 @@ const Login = () => {
             <span className="font-bold text-2xl text-gray-800">CoolKisan</span>
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">
-            {isLogin ? 'Welcome Back' : 'Join CoolKisan'}
+            {isLogin ? `Welcome Back, ${getUserTypeTitle()}` : `Join as ${getUserTypeTitle()}`}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            {isLogin 
-              ? 'Sign in to your account to continue' 
-              : 'Create your account to get started'
-            }
+            {getUserTypeDescription()}
           </p>
         </div>
 
-        {/* Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        {/* User Type Switcher */}
+        <div className="bg-white rounded-2xl shadow-xl p-6">
+          <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => setFormData({...formData, userType: 'farmer'})}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                formData.userType === 'farmer'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              I'm a Farmer
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({...formData, userType: 'chiller-owner'})}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                formData.userType === 'chiller-owner'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              I own a Chiller
+            </button>
+          </div>
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             {!isLogin && (
               <>
@@ -103,22 +154,6 @@ const Login = () => {
                       placeholder="+91 98765 43210"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label htmlFor="userType" className="block text-sm font-medium text-gray-700 mb-2">
-                    I am a
-                  </label>
-                  <select
-                    id="userType"
-                    name="userType"
-                    value={formData.userType}
-                    onChange={handleInputChange}
-                    className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="farmer">Farmer</option>
-                    <option value="chiller-owner">Chiller Owner</option>
-                  </select>
                 </div>
               </>
             )}
@@ -224,7 +259,7 @@ const Login = () => {
               type="submit"
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
             >
-              {isLogin ? 'Sign In' : 'Create Account'}
+              {isLogin ? `Sign In as ${getUserTypeTitle()}` : `Create ${getUserTypeTitle()} Account`}
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
@@ -268,21 +303,40 @@ const Login = () => {
         {/* Features */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-            Why Choose CoolKisan?
+            {formData.userType === 'farmer' ? 'For Farmers' : 'For Chiller Owners'}
           </h3>
           <div className="space-y-3">
-            <div className="flex items-center text-sm text-gray-600">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-              Find chillers within 5km radius
-            </div>
-            <div className="flex items-center text-sm text-gray-600">
-              <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
-              Save up to 80% on milk spoilage
-            </div>
-            <div className="flex items-center text-sm text-gray-600">
-              <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
-              Secure payments with UPI integration
-            </div>
+            {formData.userType === 'farmer' ? (
+              <>
+                <div className="flex items-center text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                  Find chillers within 5km radius
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
+                  Save up to 80% on milk spoilage
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
+                  Secure payments with UPI integration
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
+                  Earn money from your chiller
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-green-600 rounded-full mr-3"></div>
+                  Manage bookings easily
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-purple-600 rounded-full mr-3"></div>
+                  Track earnings and analytics
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
