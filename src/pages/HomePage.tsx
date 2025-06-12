@@ -90,7 +90,7 @@ const HomePage = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link
-                  to="/farmer"
+                  to="/login"
                   className="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center group"
                 >
                   Start as Farmer
@@ -260,7 +260,7 @@ const HomePage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              to="/farmer"
+              to="/login"
               className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105"
             >
               Get Started Today
