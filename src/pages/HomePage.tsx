@@ -30,7 +30,7 @@ const HomePage = () => {
       icon: <Clock className="h-8 w-8 text-green-600" />,
       title: 'Flexible Timing',
       description: 'Book for hours, days, or ongoing basis based on your needs',
-      action: () => navigate('/login?type=farmer'),
+      action: () => navigate('/farmer'),
       buttonText: 'Book Now'
     },
     {
@@ -51,7 +51,7 @@ const HomePage = () => {
       icon: <Smartphone className="h-8 w-8 text-red-600" />,
       title: 'Easy QR Check-in',
       description: 'Simple QR code scanning for quick chiller access',
-      action: () => navigate('/login?type=farmer'),
+      action: () => navigate('/farmer'),
       buttonText: 'Get QR Code'
     },
     {
