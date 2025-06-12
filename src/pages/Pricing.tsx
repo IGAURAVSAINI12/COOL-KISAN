@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Check, 
   Calculator, 
@@ -6,10 +7,14 @@ import {
   Snowflake, 
   Zap,
   Star,
-  Info
+  Info,
+  ArrowRight,
+  CreditCard,
+  Phone
 } from 'lucide-react';
 
 const Pricing = () => {
+  const navigate = useNavigate();
   const [volume, setVolume] = useState('100');
   const [duration, setDuration] = useState('8');
   const [chillerType, setChillerType] = useState('standard');
@@ -100,7 +105,8 @@ const Pricing = () => {
         'Standard cooling rates',
         'Basic support',
         'Mobile app access'
-      ]
+      ],
+      popular: false
     },
     {
       name: 'Professional',
@@ -130,9 +136,42 @@ const Pricing = () => {
         'Custom integrations',
         '30% discount on additional volume',
         'Premium insurance coverage'
-      ]
+      ],
+      popular: false
     }
   ];
+
+  const handleBookNow = (tierName: string) => {
+    // Store selected tier in localStorage for payment page
+    localStorage.setItem('selectedTier', JSON.stringify({
+      name: tierName,
+      volume: volume,
+      duration: duration,
+      estimatedCost: calculatePrice()
+    }));
+    navigate('/payment');
+  };
+
+  const handleSubscribe = (planName: string, price: string) => {
+    // Store selected subscription plan
+    localStorage.setItem('selectedSubscription', JSON.stringify({
+      name: planName,
+      price: price,
+      type: 'subscription'
+    }));
+    navigate('/payment');
+  };
+
+  const handleContactSales = () => {
+    // Navigate to contact page with sales inquiry pre-filled
+    navigate('/contact', { 
+      state: { 
+        subject: 'Custom Solution Inquiry',
+        userType: 'potential-user',
+        message: 'I am interested in a custom pricing solution for large-scale operations. Please contact me to discuss my requirements.'
+      }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pt-8">
@@ -238,6 +277,13 @@ const Pricing = () => {
                   )}
                 </div>
               </div>
+              <button
+                onClick={() => handleBookNow(chillerType)}
+                className="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+              >
+                <CreditCard className="h-5 w-5 mr-2" />
+                Book Now
+              </button>
             </div>
           </div>
         </div>
@@ -290,13 +336,15 @@ const Pricing = () => {
                 </ul>
                 
                 <button
-                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                  onClick={() => handleBookNow(tier.name)}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center ${
                     tier.popular
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                   }`}
                 >
                   Choose {tier.name}
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </button>
               </div>
             ))}
@@ -348,13 +396,15 @@ const Pricing = () => {
                 </ul>
                 
                 <button
-                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                  onClick={() => handleSubscribe(plan.name, plan.price)}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center ${
                     plan.popular
                       ? 'bg-purple-600 text-white hover:bg-purple-700'
                       : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                   }`}
                 >
                   Choose {plan.name}
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </button>
               </div>
             ))}
@@ -368,9 +418,21 @@ const Pricing = () => {
             For large-scale operations, bulk requirements, or custom integrations, 
             we offer tailored pricing packages to meet your specific needs.
           </p>
-          <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-            Contact Sales Team
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button 
+              onClick={handleContactSales}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+            >
+              <Phone className="h-5 w-5 mr-2" />
+              Contact Sales Team
+            </button>
+            <Link
+              to="/contact"
+              className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center"
+            >
+              Get Support
+            </Link>
+          </div>
         </div>
       </div>
     </div>

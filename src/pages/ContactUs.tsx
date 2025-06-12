@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Mail, 
@@ -16,6 +16,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const ContactUs = () => {
   const { t } = useLanguage();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,6 +25,18 @@ const ContactUs = () => {
     message: '',
     userType: 'farmer'
   });
+
+  // Pre-fill form if coming from pricing page with state
+  useEffect(() => {
+    if (location.state) {
+      setFormData(prev => ({
+        ...prev,
+        subject: location.state.subject || prev.subject,
+        userType: location.state.userType || prev.userType,
+        message: location.state.message || prev.message
+      }));
+    }
+  }, [location.state]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -35,7 +48,19 @@ const ContactUs = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Contact form submitted:', formData);
-    // Handle form submission here
+    
+    // Simulate form submission
+    alert('Thank you for your message! Our team will get back to you within 24 hours.');
+    
+    // Reset form
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      subject: '',
+      message: '',
+      userType: 'farmer'
+    });
   };
 
   const contactInfo = [
@@ -48,7 +73,7 @@ const ContactUs = () => {
     {
       icon: <Mail className="h-6 w-6 text-green-600" />,
       title: 'Email',
-      details: ['support@coolkisan.com', 'info@coolkisan.com'],
+      details: ['support@coolkisan.com', 'sales@coolkisan.com'],
       description: 'We reply within 24 hours'
     },
     {
@@ -81,6 +106,14 @@ const ContactUs = () => {
     {
       question: 'What if my milk gets spoiled?',
       answer: 'We have quality monitoring systems and insurance coverage. In rare cases of spoilage due to equipment failure, compensation is provided as per our terms.'
+    },
+    {
+      question: 'Do you offer custom pricing for large operations?',
+      answer: 'Yes! We offer tailored pricing packages for large-scale operations, bulk requirements, and custom integrations. Contact our sales team for a personalized quote.'
+    },
+    {
+      question: 'How do subscription plans work?',
+      answer: 'Subscription plans provide monthly cooling allowances at discounted rates. You can upgrade, downgrade, or cancel anytime. Additional usage beyond your plan is charged at discounted rates.'
     }
   ];
 
@@ -203,6 +236,7 @@ const ContactUs = () => {
                         <option value="chiller-owner">Chiller Owner</option>
                         <option value="potential-user">Potential User</option>
                         <option value="partner">Business Partner</option>
+                        <option value="enterprise">Enterprise Customer</option>
                         <option value="other">Other</option>
                       </select>
                     </div>
@@ -312,6 +346,21 @@ const ContactUs = () => {
               >
                 <Phone className="h-4 w-4 mr-2" />
                 Call Emergency Line
+              </a>
+            </div>
+
+            {/* Sales Contact */}
+            <div className="bg-purple-50 rounded-2xl p-6 border border-purple-200">
+              <h3 className="text-lg font-semibold text-purple-900 mb-2">Sales Team</h3>
+              <p className="text-purple-700 text-sm mb-3">
+                For custom solutions and enterprise pricing:
+              </p>
+              <a
+                href="mailto:sales@coolkisan.com"
+                className="flex items-center justify-center w-full bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Email Sales Team
               </a>
             </div>
           </div>

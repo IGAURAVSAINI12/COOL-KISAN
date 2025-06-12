@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   CreditCard, 
   Smartphone, 
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 const Payment = () => {
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [upiId, setUpiId] = useState('');
   const [cardDetails, setCardDetails] = useState({
@@ -26,21 +27,63 @@ const Payment = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
+  const [bookingData, setBookingData] = useState(null);
 
-  // Mock booking data
-  const bookingData = {
-    chiller: 'Village Community Chiller',
-    owner: 'Ramesh Kumar',
-    distance: '1.2 km',
-    volume: '50L',
-    duration: '8 hours',
-    rate: '₹1.2/L',
-    subtotal: 60,
-    platformFee: 6,
-    total: 66,
-    rating: 4.8,
-    temperature: '-2°C'
-  };
+  // Load booking data from localStorage or use default
+  useEffect(() => {
+    const selectedTier = localStorage.getItem('selectedTier');
+    const selectedSubscription = localStorage.getItem('selectedSubscription');
+    
+    if (selectedTier) {
+      const tierData = JSON.parse(selectedTier);
+      setBookingData({
+        type: 'pay-per-use',
+        chiller: `${tierData.name} Service`,
+        owner: 'CoolKisan Network',
+        distance: '2.5 km',
+        volume: `${tierData.volume}L`,
+        duration: `${tierData.duration} hours`,
+        rate: '₹1.2/L',
+        subtotal: parseFloat(tierData.estimatedCost),
+        platformFee: Math.round(parseFloat(tierData.estimatedCost) * 0.1),
+        total: Math.round(parseFloat(tierData.estimatedCost) * 1.1),
+        rating: 4.8,
+        temperature: '-2°C'
+      });
+    } else if (selectedSubscription) {
+      const subData = JSON.parse(selectedSubscription);
+      setBookingData({
+        type: 'subscription',
+        chiller: `${subData.name} Subscription`,
+        owner: 'CoolKisan',
+        distance: 'All Locations',
+        volume: subData.name === 'Starter' ? '500L' : subData.name === 'Professional' ? '1,500L' : '5,000L',
+        duration: 'Monthly Plan',
+        rate: 'Subscription',
+        subtotal: parseInt(subData.price.replace('₹', '')),
+        platformFee: 0,
+        total: parseInt(subData.price.replace('₹', '')),
+        rating: 4.9,
+        temperature: 'All Types'
+      });
+    } else {
+      // Default booking data
+      setBookingData({
+        type: 'pay-per-use',
+        chiller: 'Village Community Chiller',
+        owner: 'Ramesh Kumar',
+        distance: '1.2 km',
+        volume: '50L',
+        duration: '8 hours',
+        rate: '₹1.2/L',
+        subtotal: 60,
+        platformFee: 6,
+        total: 66,
+        rating: 4.8,
+        temperature: '-2°C'
+      });
+    }
+  }, []);
 
   const handlePayment = async () => {
     setIsProcessing(true);
@@ -48,6 +91,9 @@ const Payment = () => {
     setTimeout(() => {
       setIsProcessing(false);
       setPaymentComplete(true);
+      // Clear stored data after successful payment
+      localStorage.removeItem('selectedTier');
+      localStorage.removeItem('selectedSubscription');
     }, 3000);
   };
 
@@ -60,46 +106,66 @@ const Payment = () => {
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
-            <p className="text-gray-600 mb-6">Your chiller has been booked successfully</p>
+            <p className="text-gray-600 mb-6">
+              {bookingData?.type === 'subscription' 
+                ? 'Your subscription has been activated successfully'
+                : 'Your chiller has been booked successfully'
+              }
+            </p>
             
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
               <div className="flex items-center justify-center mb-4">
                 <QrCode className="h-12 w-12 text-blue-600" />
               </div>
-              <p className="text-sm text-gray-600 mb-2">Your QR Code</p>
-              <p className="font-mono text-lg font-semibold text-gray-900">CK-2024-001234</p>
-              <p className="text-xs text-gray-500 mt-2">Show this code at the chiller location</p>
+              <p className="text-sm text-gray-600 mb-2">
+                {bookingData?.type === 'subscription' ? 'Your Subscription ID' : 'Your QR Code'}
+              </p>
+              <p className="font-mono text-lg font-semibold text-gray-900">
+                {bookingData?.type === 'subscription' ? 'SUB-2024-001234' : 'CK-2024-001234'}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                {bookingData?.type === 'subscription' 
+                  ? 'Use this ID for all subscription-related queries'
+                  : 'Show this code at the chiller location'
+                }
+              </p>
             </div>
 
             <div className="space-y-3 text-sm text-left mb-6">
               <div className="flex justify-between">
-                <span className="text-gray-600">Booking ID:</span>
-                <span className="font-medium">#CK001234</span>
+                <span className="text-gray-600">
+                  {bookingData?.type === 'subscription' ? 'Subscription ID:' : 'Booking ID:'}
+                </span>
+                <span className="font-medium">
+                  {bookingData?.type === 'subscription' ? '#SUB001234' : '#CK001234'}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Chiller:</span>
-                <span className="font-medium">{bookingData.chiller}</span>
+                <span className="text-gray-600">Service:</span>
+                <span className="font-medium">{bookingData?.chiller}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Volume:</span>
-                <span className="font-medium">{bookingData.volume}</span>
+                <span className="text-gray-600">
+                  {bookingData?.type === 'subscription' ? 'Monthly Allowance:' : 'Volume:'}
+                </span>
+                <span className="font-medium">{bookingData?.volume}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Duration:</span>
-                <span className="font-medium">{bookingData.duration}</span>
+                <span className="font-medium">{bookingData?.duration}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Amount Paid:</span>
-                <span className="font-semibold text-green-600">₹{bookingData.total}</span>
+                <span className="font-semibold text-green-600">₹{bookingData?.total}</span>
               </div>
             </div>
 
             <div className="space-y-3">
               <Link
-                to="/farmer"
+                to={bookingData?.type === 'subscription' ? '/farmer' : '/farmer'}
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors block text-center"
               >
-                View My Bookings
+                {bookingData?.type === 'subscription' ? 'View My Subscription' : 'View My Bookings'}
               </Link>
               <Link
                 to="/"
@@ -114,14 +180,25 @@ const Payment = () => {
     );
   }
 
+  if (!bookingData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading payment details...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center mb-8">
-          <Link to="/farmer" className="mr-4">
+          <button onClick={() => navigate(-1)} className="mr-4">
             <ArrowLeft className="h-6 w-6 text-gray-600 hover:text-gray-800" />
-          </Link>
+          </button>
           <h1 className="text-2xl font-bold text-gray-900">Complete Payment</h1>
         </div>
 
@@ -296,7 +373,9 @@ const Payment = () => {
           {/* Booking Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Booking Summary</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                {bookingData.type === 'subscription' ? 'Subscription Summary' : 'Booking Summary'}
+              </h2>
               
               <div className="space-y-4 mb-6">
                 <div className="border-b pb-4">
@@ -307,7 +386,7 @@ const Payment = () => {
                   </div>
                   <div className="flex items-center mt-1 text-sm text-gray-600">
                     <MapPin className="h-4 w-4 mr-1" />
-                    {bookingData.distance} away
+                    {bookingData.distance}
                   </div>
                 </div>
                 
@@ -315,7 +394,9 @@ const Payment = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Droplets className="h-4 w-4 text-blue-500 mr-2" />
-                      <span className="text-gray-600">Volume:</span>
+                      <span className="text-gray-600">
+                        {bookingData.type === 'subscription' ? 'Monthly Allowance:' : 'Volume:'}
+                      </span>
                     </div>
                     <span className="font-medium">{bookingData.volume}</span>
                   </div>
@@ -339,13 +420,17 @@ const Payment = () => {
 
               <div className="border-t pt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="text-gray-600">
+                    {bookingData.type === 'subscription' ? 'Monthly fee:' : 'Subtotal:'}
+                  </span>
                   <span>₹{bookingData.subtotal}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Platform fee:</span>
-                  <span>₹{bookingData.platformFee}</span>
-                </div>
+                {bookingData.platformFee > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Platform fee:</span>
+                    <span>₹{bookingData.platformFee}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-semibold pt-2 border-t">
                   <span>Total:</span>
                   <span className="text-green-600">₹{bookingData.total}</span>
