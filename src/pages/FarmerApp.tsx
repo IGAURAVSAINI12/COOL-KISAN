@@ -16,7 +16,15 @@ import {
   CreditCard,
   Smartphone,
   History,
-  Eye
+  Eye,
+  Download,
+  Minus,
+  X,
+  Check,
+  Calendar,
+  User,
+  Phone,
+  Mail
 } from 'lucide-react';
 
 const FarmerApp = () => {
@@ -27,32 +35,81 @@ const FarmerApp = () => {
   const [selectedChiller, setSelectedChiller] = useState(null);
   const [walletBalance, setWalletBalance] = useState(1250);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
+  const [showDeductMoneyModal, setShowDeductMoneyModal] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [addAmount, setAddAmount] = useState('');
+  const [deductAmount, setDeductAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('upi');
+  const [deductReason, setDeductReason] = useState('');
   const [bookings, setBookings] = useState([
     {
       id: 'CK-2024-001234',
       chiller: 'Village Community Chiller',
       owner: 'Ramesh Kumar',
+      ownerPhone: '+91 98765 43210',
+      ownerEmail: 'ramesh@example.com',
       volume: '50L',
       duration: '8 hours',
       amount: 66,
       status: 'Active',
       date: '2024-01-15',
+      time: '09:30 AM',
       qrCode: 'CK-2024-001234',
-      timeLeft: '3h 45m'
+      timeLeft: '3h 45m',
+      location: 'Village Center, Main Road',
+      temperature: '-2°C',
+      paymentMethod: 'Wallet',
+      transactionId: 'TXN123456789'
     },
     {
       id: 'CK-2024-001233',
       chiller: 'Mobile Chiller Express',
       owner: 'CoolTruck Services',
+      ownerPhone: '+91 98765 43211',
+      ownerEmail: 'cooltruck@example.com',
       volume: '30L',
       duration: '12 hours',
       amount: 54,
       status: 'Completed',
       date: '2024-01-14',
+      time: '02:15 PM',
       qrCode: 'CK-2024-001233',
-      timeLeft: 'Completed'
+      timeLeft: 'Completed',
+      location: 'Mobile Unit - Highway Junction',
+      temperature: '-3°C',
+      paymentMethod: 'UPI',
+      transactionId: 'TXN123456788'
+    }
+  ]);
+
+  const [transactions, setTransactions] = useState([
+    {
+      id: 'TXN123456789',
+      type: 'debit',
+      amount: 66,
+      description: 'Chiller booking - Village Community Chiller',
+      date: '2024-01-15',
+      time: '09:30 AM',
+      bookingId: 'CK-2024-001234'
+    },
+    {
+      id: 'TXN123456788',
+      type: 'debit',
+      amount: 54,
+      description: 'Chiller booking - Mobile Chiller Express',
+      date: '2024-01-14',
+      time: '02:15 PM',
+      bookingId: 'CK-2024-001233'
+    },
+    {
+      id: 'TXN123456787',
+      type: 'credit',
+      amount: 500,
+      description: 'Wallet top-up via UPI',
+      date: '2024-01-13',
+      time: '11:20 AM',
+      bookingId: null
     }
   ]);
 
@@ -130,16 +187,36 @@ const FarmerApp = () => {
       id: `CK-2024-${String(Date.now()).slice(-6)}`,
       chiller: selectedChiller.name,
       owner: selectedChiller.owner,
+      ownerPhone: '+91 98765 43210',
+      ownerEmail: 'owner@example.com',
       volume: `${milkVolume}L`,
       duration: `${duration} hours`,
       amount: totalCost,
       status: 'Active',
       date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       qrCode: `CK-2024-${String(Date.now()).slice(-6)}`,
-      timeLeft: `${duration}h 0m`
+      timeLeft: `${duration}h 0m`,
+      location: 'Village Center, Main Road',
+      temperature: selectedChiller.temperature,
+      paymentMethod: 'Wallet',
+      transactionId: `TXN${Date.now()}`
     };
 
     setBookings([newBooking, ...bookings]);
+
+    // Add transaction record
+    const newTransaction = {
+      id: newBooking.transactionId,
+      type: 'debit',
+      amount: totalCost,
+      description: `Chiller booking - ${selectedChiller.name}`,
+      date: newBooking.date,
+      time: newBooking.time,
+      bookingId: newBooking.id
+    };
+
+    setTransactions([newTransaction, ...transactions]);
 
     // Reset form
     setMilkVolume('');
@@ -157,9 +234,62 @@ const FarmerApp = () => {
 
     const amount = parseFloat(addAmount);
     setWalletBalance(prev => prev + amount);
+
+    // Add transaction record
+    const newTransaction = {
+      id: `TXN${Date.now()}`,
+      type: 'credit',
+      amount: amount,
+      description: `Wallet top-up via ${paymentMethod.toUpperCase()}`,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      bookingId: null
+    };
+
+    setTransactions([newTransaction, ...transactions]);
+
     setAddAmount('');
     setShowAddMoneyModal(false);
     alert(`₹${amount} added to your wallet successfully!`);
+  };
+
+  const handleDeductMoney = () => {
+    if (!deductAmount || parseFloat(deductAmount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    if (!deductReason.trim()) {
+      alert('Please provide a reason for deduction');
+      return;
+    }
+
+    const amount = parseFloat(deductAmount);
+    
+    if (amount > walletBalance) {
+      alert('Insufficient wallet balance for this deduction');
+      return;
+    }
+
+    setWalletBalance(prev => prev - amount);
+
+    // Add transaction record
+    const newTransaction = {
+      id: `TXN${Date.now()}`,
+      type: 'debit',
+      amount: amount,
+      description: `Manual deduction - ${deductReason}`,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      bookingId: null
+    };
+
+    setTransactions([newTransaction, ...transactions]);
+
+    setDeductAmount('');
+    setDeductReason('');
+    setShowDeductMoneyModal(false);
+    alert(`₹${amount} deducted from your wallet successfully!`);
   };
 
   const viewBookingDetails = (booking) => {
@@ -173,6 +303,17 @@ Amount: ₹${booking.amount}
 Status: ${booking.status}
 QR Code: ${booking.qrCode}
 Date: ${booking.date}`);
+  };
+
+  const downloadReceipt = (booking) => {
+    setSelectedReceipt(booking);
+    setShowReceiptModal(true);
+  };
+
+  const generateReceiptPDF = () => {
+    // In a real app, this would generate and download a PDF
+    alert('Receipt downloaded successfully!');
+    setShowReceiptModal(false);
   };
 
   return (
@@ -196,6 +337,13 @@ Date: ${booking.date}`);
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Money
+              </button>
+              <button
+                onClick={() => setShowDeductMoneyModal(true)}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center"
+              >
+                <Minus className="h-4 w-4 mr-2" />
+                Deduct
               </button>
             </div>
           </div>
@@ -472,7 +620,7 @@ Date: ${booking.date}`);
                       View Details
                     </button>
                     <button
-                      onClick={() => alert(`Receipt for booking ${booking.id} downloaded!`)}
+                      onClick={() => downloadReceipt(booking)}
                       className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
                     >
                       <Receipt className="h-4 w-4 mr-2" />
@@ -504,13 +652,22 @@ Date: ${booking.date}`);
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Wallet Balance</h2>
-                <button
-                  onClick={() => setShowAddMoneyModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Money
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowAddMoneyModal(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Money
+                  </button>
+                  <button
+                    onClick={() => setShowDeductMoneyModal(true)}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center"
+                  >
+                    <Minus className="h-4 w-4 mr-2" />
+                    Deduct Money
+                  </button>
+                </div>
               </div>
               
               <div className="bg-gradient-to-r from-blue-600 to-green-600 rounded-xl p-6 text-white mb-6">
@@ -526,7 +683,7 @@ Date: ${booking.date}`);
               <div className="grid sm:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600">Total Spent</p>
-                  <p className="text-xl font-semibold text-gray-900">₹{bookings.reduce((sum, b) => sum + b.amount, 0)}</p>
+                  <p className="text-xl font-semibold text-gray-900">₹{transactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0)}</p>
                 </div>
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600">Total Bookings</p>
@@ -542,15 +699,20 @@ Date: ${booking.date}`);
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
               <div className="space-y-3">
-                {bookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                {transactions.map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-900">{booking.chiller}</p>
-                      <p className="text-sm text-gray-600">{booking.date} • {booking.volume}</p>
+                      <p className="font-medium text-gray-900">{transaction.description}</p>
+                      <p className="text-sm text-gray-600">{transaction.date} • {transaction.time}</p>
+                      {transaction.bookingId && (
+                        <p className="text-xs text-gray-500">Booking: {transaction.bookingId}</p>
+                      )}
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-red-600">-₹{booking.amount}</p>
-                      <p className="text-xs text-gray-500">Deducted</p>
+                      <p className={`font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                        {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount}
+                      </p>
+                      <p className="text-xs text-gray-500 capitalize">{transaction.type}</p>
                     </div>
                   </div>
                 ))}
@@ -569,7 +731,7 @@ Date: ${booking.date}`);
                   onClick={() => setShowAddMoneyModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  ×
+                  <X className="h-6 w-6" />
                 </button>
               </div>
               
@@ -635,6 +797,229 @@ Date: ${booking.date}`);
                   className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
                   Add Money
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deduct Money Modal */}
+        {showDeductMoneyModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Deduct Money from Wallet</h2>
+                <button 
+                  onClick={() => setShowDeductMoneyModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
+                  <input
+                    type="number"
+                    value={deductAmount}
+                    onChange={(e) => setDeductAmount(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="Enter amount to deduct"
+                    max={walletBalance}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">Available balance: ₹{walletBalance}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Deduction</label>
+                  <textarea
+                    value={deductReason}
+                    onChange={(e) => setDeductReason(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="Enter reason for deduction..."
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <Bell className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">Important Notice</h3>
+                      <p className="text-sm text-red-700 mt-1">
+                        This action will permanently deduct money from your wallet. Please ensure the amount and reason are correct.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-4 mt-6">
+                <button
+                  onClick={() => setShowDeductMoneyModal(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeductMoney}
+                  className="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                >
+                  Deduct Money
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Receipt Modal */}
+        {showReceiptModal && selectedReceipt && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Booking Receipt</h2>
+                <button 
+                  onClick={() => setShowReceiptModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="text-center border-b pb-4">
+                  <h3 className="text-lg font-bold text-gray-900">CoolKisan</h3>
+                  <p className="text-sm text-gray-600">Smart Milk Chilling Platform</p>
+                  <p className="text-xs text-gray-500">Receipt #{selectedReceipt.id}</p>
+                </div>
+
+                {/* Booking Details */}
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Booking ID:</span>
+                    <span className="text-sm font-medium">{selectedReceipt.id}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Date & Time:</span>
+                    <span className="text-sm font-medium">{selectedReceipt.date} {selectedReceipt.time}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Status:</span>
+                    <span className={`text-sm font-medium ${
+                      selectedReceipt.status === 'Active' ? 'text-green-600' :
+                      selectedReceipt.status === 'Completed' ? 'text-blue-600' :
+                      'text-yellow-600'
+                    }`}>
+                      {selectedReceipt.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Service Details */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Service Details</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Chiller:</span>
+                      <span className="text-sm font-medium">{selectedReceipt.chiller}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Owner:</span>
+                      <span className="text-sm font-medium">{selectedReceipt.owner}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Location:</span>
+                      <span className="text-sm font-medium">{selectedReceipt.location}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Volume:</span>
+                      <span className="text-sm font-medium">{selectedReceipt.volume}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Duration:</span>
+                      <span className="text-sm font-medium">{selectedReceipt.duration}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Temperature:</span>
+                      <span className="text-sm font-medium">{selectedReceipt.temperature}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Details */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Payment Details</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Payment Method:</span>
+                      <span className="text-sm font-medium">{selectedReceipt.paymentMethod}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Transaction ID:</span>
+                      <span className="text-sm font-medium font-mono">{selectedReceipt.transactionId}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-semibold border-t pt-2">
+                      <span>Total Amount:</span>
+                      <span className="text-green-600">₹{selectedReceipt.amount}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">Contact Information</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 text-gray-500 mr-2" />
+                      <span className="text-sm">{selectedReceipt.ownerPhone}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 text-gray-500 mr-2" />
+                      <span className="text-sm">{selectedReceipt.ownerEmail}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* QR Code */}
+                {selectedReceipt.status === 'Active' && (
+                  <div className="border-t pt-4 text-center">
+                    <h4 className="font-semibold text-gray-900 mb-3">Access QR Code</h4>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <QrCode className="h-16 w-16 text-blue-600 mx-auto mb-2" />
+                      <p className="font-mono text-lg font-semibold text-gray-900">{selectedReceipt.qrCode}</p>
+                      <p className="text-xs text-gray-500 mt-1">Show this code at chiller location</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="border-t pt-4 text-center">
+                  <p className="text-xs text-gray-500">
+                    Thank you for using CoolKisan!
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    For support: support@coolkisan.com | +91 98765 43210
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex space-x-4 mt-6">
+                <button
+                  onClick={() => setShowReceiptModal(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={generateReceiptPDF}
+                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
                 </button>
               </div>
             </div>
