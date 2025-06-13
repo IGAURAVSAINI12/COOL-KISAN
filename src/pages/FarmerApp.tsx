@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
@@ -10,14 +10,51 @@ import {
   Navigation,
   Thermometer,
   Wallet,
-  Bell
+  Bell,
+  Receipt,
+  Plus,
+  CreditCard,
+  Smartphone,
+  History,
+  Eye
 } from 'lucide-react';
 
 const FarmerApp = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('book');
   const [milkVolume, setMilkVolume] = useState('');
   const [duration, setDuration] = useState('8');
   const [selectedChiller, setSelectedChiller] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(1250);
+  const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
+  const [addAmount, setAddAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('upi');
+  const [bookings, setBookings] = useState([
+    {
+      id: 'CK-2024-001234',
+      chiller: 'Village Community Chiller',
+      owner: 'Ramesh Kumar',
+      volume: '50L',
+      duration: '8 hours',
+      amount: 66,
+      status: 'Active',
+      date: '2024-01-15',
+      qrCode: 'CK-2024-001234',
+      timeLeft: '3h 45m'
+    },
+    {
+      id: 'CK-2024-001233',
+      chiller: 'Mobile Chiller Express',
+      owner: 'CoolTruck Services',
+      volume: '30L',
+      duration: '12 hours',
+      amount: 54,
+      status: 'Completed',
+      date: '2024-01-14',
+      qrCode: 'CK-2024-001233',
+      timeLeft: 'Completed'
+    }
+  ]);
 
   const nearbyChillers = [
     {
@@ -76,27 +113,66 @@ const FarmerApp = () => {
       return;
     }
 
-    // Store booking data for payment page
-    const bookingData = {
-      type: 'pay-per-use',
+    const totalCost = Math.round(parseFloat(calculateCost()) * 1.1);
+
+    // Check wallet balance
+    if (walletBalance < totalCost) {
+      alert(`Insufficient wallet balance. You need ₹${totalCost} but have ₹${walletBalance}. Please add money to your wallet.`);
+      setShowAddMoneyModal(true);
+      return;
+    }
+
+    // Deduct amount from wallet
+    setWalletBalance(prev => prev - totalCost);
+
+    // Create new booking
+    const newBooking = {
+      id: `CK-2024-${String(Date.now()).slice(-6)}`,
       chiller: selectedChiller.name,
       owner: selectedChiller.owner,
-      distance: selectedChiller.distance,
       volume: `${milkVolume}L`,
       duration: `${duration} hours`,
-      rate: selectedChiller.rate,
-      subtotal: parseFloat(calculateCost()),
-      platformFee: Math.round(parseFloat(calculateCost()) * 0.1),
-      total: Math.round(parseFloat(calculateCost()) * 1.1),
-      rating: selectedChiller.rating,
-      temperature: selectedChiller.temperature
+      amount: totalCost,
+      status: 'Active',
+      date: new Date().toISOString().split('T')[0],
+      qrCode: `CK-2024-${String(Date.now()).slice(-6)}`,
+      timeLeft: `${duration}h 0m`
     };
 
-    // Store in localStorage for payment page
-    localStorage.setItem('selectedBooking', JSON.stringify(bookingData));
-    
-    // Navigate to payment page
-    navigate('/payment');
+    setBookings([newBooking, ...bookings]);
+
+    // Reset form
+    setMilkVolume('');
+    setSelectedChiller(null);
+
+    alert(`Booking successful! ₹${totalCost} deducted from wallet. Your QR code: ${newBooking.qrCode}`);
+    setActiveTab('bookings');
+  };
+
+  const handleAddMoney = () => {
+    if (!addAmount || parseFloat(addAmount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    const amount = parseFloat(addAmount);
+    setWalletBalance(prev => prev + amount);
+    setAddAmount('');
+    setShowAddMoneyModal(false);
+    alert(`₹${amount} added to your wallet successfully!`);
+  };
+
+  const viewBookingDetails = (booking) => {
+    alert(`Booking Details:
+ID: ${booking.id}
+Chiller: ${booking.chiller}
+Owner: ${booking.owner}
+Volume: ${booking.volume}
+Duration: ${booking.duration}
+Amount: ₹${booking.amount}
+Status: ${booking.status}
+QR Code: ${booking.qrCode}
+Date: ${booking.date}`);
   };
 
   return (
@@ -106,200 +182,464 @@ const FarmerApp = () => {
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Book a Chiller</h1>
-              <p className="text-gray-600 mt-1">Find and reserve cooling space for your milk</p>
+              <h1 className="text-2xl font-bold text-gray-900">Farmer Dashboard</h1>
+              <p className="text-gray-600 mt-1">Book chillers and manage your milk preservation</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="bg-green-100 text-green-800 px-3 py-2 rounded-full text-sm font-medium">
-                <Bell className="h-4 w-4 inline mr-1" />
-                3 Available Nearby
+              <div className="bg-green-100 text-green-800 px-3 py-2 rounded-full text-sm font-medium flex items-center">
+                <Wallet className="h-4 w-4 mr-1" />
+                ₹{walletBalance}
               </div>
+              <button
+                onClick={() => setShowAddMoneyModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Money
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Booking Form */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            {/* Volume and Duration */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Milk Details</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Droplets className="h-4 w-4 inline mr-1" />
-                    Milk Volume (Litres)
-                  </label>
-                  <input
-                    type="number"
-                    value={milkVolume}
-                    onChange={(e) => setMilkVolume(e.target.value)}
-                    placeholder="Enter volume"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-2xl shadow-lg mb-6">
+          <nav className="flex space-x-8 p-6">
+            {[
+              { id: 'book', label: 'Book Chiller', icon: <QrCode className="h-4 w-4" /> },
+              { id: 'bookings', label: 'My Bookings', icon: <History className="h-4 w-4" /> },
+              { id: 'wallet', label: 'Wallet', icon: <Wallet className="h-4 w-4" /> }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Book Chiller Tab */}
+        {activeTab === 'book' && (
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              {/* Volume and Duration */}
+              <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Milk Details</h2>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Droplets className="h-4 w-4 inline mr-1" />
+                      Milk Volume (Litres)
+                    </label>
+                    <input
+                      type="number"
+                      value={milkVolume}
+                      onChange={(e) => setMilkVolume(e.target.value)}
+                      placeholder="Enter volume"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <Clock className="h-4 w-4 inline mr-1" />
+                      Duration (Hours)
+                    </label>
+                    <select
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="4">4 Hours</option>
+                      <option value="8">8 Hours</option>
+                      <option value="12">12 Hours</option>
+                      <option value="24">24 Hours</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Clock className="h-4 w-4 inline mr-1" />
-                    Duration (Hours)
-                  </label>
-                  <select
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="4">4 Hours</option>
-                    <option value="8">8 Hours</option>
-                    <option value="12">12 Hours</option>
-                    <option value="24">24 Hours</option>
-                  </select>
+              </div>
+
+              {/* Available Chillers */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  <MapPin className="h-5 w-5 inline mr-2" />
+                  Nearby Chillers
+                </h2>
+                <div className="space-y-4">
+                  {nearbyChillers.map((chiller) => (
+                    <div
+                      key={chiller.id}
+                      className={`border rounded-xl p-4 cursor-pointer transition-all duration-300 ${
+                        selectedChiller?.id === chiller.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      } ${!chiller.available ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => chiller.available && setSelectedChiller(chiller)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-semibold text-gray-900">{chiller.name}</h3>
+                            <div className="flex items-center space-x-2">
+                              {chiller.type === 'Mobile' && (
+                                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
+                                  Mobile
+                                </span>
+                              )}
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                chiller.available 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {chiller.available ? 'Available' : 'Full'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="grid sm:grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div className="flex items-center">
+                              <Navigation className="h-4 w-4 mr-2 text-blue-500" />
+                              {chiller.distance}
+                            </div>
+                            <div className="flex items-center">
+                              <Droplets className="h-4 w-4 mr-2 text-blue-500" />
+                              {chiller.capacity}
+                            </div>
+                            <div className="flex items-center">
+                              <DollarSign className="h-4 w-4 mr-2 text-green-500" />
+                              {chiller.rate} per 8hrs
+                            </div>
+                            <div className="flex items-center">
+                              <Thermometer className="h-4 w-4 mr-2 text-red-500" />
+                              {chiller.temperature}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between mt-3">
+                            <div className="flex items-center">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                              <span className="ml-1 text-sm font-medium">{chiller.rating}</span>
+                              <span className="text-sm text-gray-500 ml-2">by {chiller.owner}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Available Chillers */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                <MapPin className="h-5 w-5 inline mr-2" />
-                Nearby Chillers
-              </h2>
-              <div className="space-y-4">
-                {nearbyChillers.map((chiller) => (
-                  <div
-                    key={chiller.id}
-                    className={`border rounded-xl p-4 cursor-pointer transition-all duration-300 ${
-                      selectedChiller?.id === chiller.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    } ${!chiller.available ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={() => chiller.available && setSelectedChiller(chiller)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-gray-900">{chiller.name}</h3>
-                          <div className="flex items-center space-x-2">
-                            {chiller.type === 'Mobile' && (
-                              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
-                                Mobile
-                              </span>
-                            )}
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              chiller.available 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {chiller.available ? 'Available' : 'Full'}
-                            </span>
-                          </div>
+            {/* Booking Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Booking Summary</h2>
+                
+                {selectedChiller ? (
+                  <div className="space-y-4">
+                    <div className="border-b pb-4">
+                      <h3 className="font-medium text-gray-900">{selectedChiller.name}</h3>
+                      <p className="text-sm text-gray-600">{selectedChiller.distance} away</p>
+                    </div>
+                    
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Volume:</span>
+                        <span className="font-medium">{milkVolume || '0'}L</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Duration:</span>
+                        <span className="font-medium">{duration} hours</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Rate:</span>
+                        <span className="font-medium">{selectedChiller.rate}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Subtotal:</span>
+                        <span className="font-medium">₹{calculateCost()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Platform fee:</span>
+                        <span className="font-medium">₹{Math.round(parseFloat(calculateCost() || 0) * 0.1)}</span>
+                      </div>
+                      <div className="border-t pt-3 flex justify-between text-lg font-semibold">
+                        <span>Total Cost:</span>
+                        <span className="text-green-600">₹{Math.round(parseFloat(calculateCost() || 0) * 1.1)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Wallet Balance:</span>
+                        <span className={`font-medium ${walletBalance >= Math.round(parseFloat(calculateCost() || 0) * 1.1) ? 'text-green-600' : 'text-red-600'}`}>
+                          ₹{walletBalance}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleBooking}
+                      className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!milkVolume || parseFloat(milkVolume) <= 0}
+                    >
+                      <QrCode className="h-5 w-5 inline mr-2" />
+                      Book & Get QR Code
+                    </button>
+
+                    <div className="text-xs text-gray-500 text-center">
+                      Amount will be deducted from wallet
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">Select a chiller to see booking details</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* My Bookings Tab */}
+        {activeTab === 'bookings' && (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">My Bookings</h2>
+            
+            <div className="space-y-4">
+              {bookings.map((booking) => (
+                <div key={booking.id} className="border border-gray-200 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{booking.chiller}</h3>
+                      <p className="text-sm text-gray-600">by {booking.owner}</p>
+                      <p className="text-xs text-gray-500">Booking ID: {booking.id}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        booking.status === 'Active' ? 'bg-green-100 text-green-800' :
+                        booking.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {booking.status}
+                      </span>
+                      <p className="text-sm text-gray-500 mt-1">{booking.date}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid sm:grid-cols-4 gap-4 text-sm mb-4">
+                    <div>
+                      <span className="block text-gray-600">Volume:</span>
+                      <span className="font-medium">{booking.volume}</span>
+                    </div>
+                    <div>
+                      <span className="block text-gray-600">Duration:</span>
+                      <span className="font-medium">{booking.duration}</span>
+                    </div>
+                    <div>
+                      <span className="block text-gray-600">Amount:</span>
+                      <span className="font-medium text-green-600">₹{booking.amount}</span>
+                    </div>
+                    <div>
+                      <span className="block text-gray-600">Time Left:</span>
+                      <span className="font-medium">{booking.timeLeft}</span>
+                    </div>
+                  </div>
+                  
+                  {booking.status === 'Active' && (
+                    <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-blue-900">QR Code for Access</p>
+                          <p className="text-sm text-blue-700">Show this code at the chiller location</p>
                         </div>
-                        <div className="grid sm:grid-cols-2 gap-4 text-sm text-gray-600">
-                          <div className="flex items-center">
-                            <Navigation className="h-4 w-4 mr-2 text-blue-500" />
-                            {chiller.distance}
-                          </div>
-                          <div className="flex items-center">
-                            <Droplets className="h-4 w-4 mr-2 text-blue-500" />
-                            {chiller.capacity}
-                          </div>
-                          <div className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-2 text-green-500" />
-                            {chiller.rate} per 8hrs
-                          </div>
-                          <div className="flex items-center">
-                            <Thermometer className="h-4 w-4 mr-2 text-red-500" />
-                            {chiller.temperature}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                            <span className="ml-1 text-sm font-medium">{chiller.rating}</span>
-                            <span className="text-sm text-gray-500 ml-2">by {chiller.owner}</span>
-                          </div>
+                        <div className="text-right">
+                          <QrCode className="h-8 w-8 text-blue-600 mx-auto mb-1" />
+                          <p className="font-mono text-sm font-semibold text-blue-900">{booking.qrCode}</p>
                         </div>
                       </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => viewBookingDetails(booking)}
+                      className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => alert(`Receipt for booking ${booking.id} downloaded!`)}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    >
+                      <Receipt className="h-4 w-4 mr-2" />
+                      Download Receipt
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              {bookings.length === 0 && (
+                <div className="text-center py-12">
+                  <History className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No bookings yet</p>
+                  <button
+                    onClick={() => setActiveTab('book')}
+                    className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Book Your First Chiller
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Wallet Tab */}
+        {activeTab === 'wallet' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Wallet Balance</h2>
+                <button
+                  onClick={() => setShowAddMoneyModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Money
+                </button>
+              </div>
+              
+              <div className="bg-gradient-to-r from-blue-600 to-green-600 rounded-xl p-6 text-white mb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-100 mb-2">Available Balance</p>
+                    <p className="text-3xl font-bold">₹{walletBalance}</p>
+                  </div>
+                  <Wallet className="h-12 w-12 text-blue-200" />
+                </div>
+              </div>
+              
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Total Spent</p>
+                  <p className="text-xl font-semibold text-gray-900">₹{bookings.reduce((sum, b) => sum + b.amount, 0)}</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Total Bookings</p>
+                  <p className="text-xl font-semibold text-gray-900">{bookings.length}</p>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">Active Bookings</p>
+                  <p className="text-xl font-semibold text-gray-900">{bookings.filter(b => b.status === 'Active').length}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+              <div className="space-y-3">
+                {bookings.map((booking) => (
+                  <div key={booking.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">{booking.chiller}</p>
+                      <p className="text-sm text-gray-600">{booking.date} • {booking.volume}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-red-600">-₹{booking.amount}</p>
+                      <p className="text-xs text-gray-500">Deducted</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+        )}
 
-          {/* Booking Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Booking Summary</h2>
-              
-              {selectedChiller ? (
-                <div className="space-y-4">
-                  <div className="border-b pb-4">
-                    <h3 className="font-medium text-gray-900">{selectedChiller.name}</h3>
-                    <p className="text-sm text-gray-600">{selectedChiller.distance} away</p>
-                  </div>
-                  
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Volume:</span>
-                      <span className="font-medium">{milkVolume || '0'}L</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Duration:</span>
-                      <span className="font-medium">{duration} hours</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Rate:</span>
-                      <span className="font-medium">{selectedChiller.rate}</span>
-                    </div>
-                    <div className="border-t pt-3 flex justify-between text-lg font-semibold">
-                      <span>Total Cost:</span>
-                      <span className="text-green-600">₹{calculateCost()}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleBooking}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!milkVolume || parseFloat(milkVolume) <= 0}
-                  >
-                    <QrCode className="h-5 w-5 inline mr-2" />
-                    Book & Get QR Code
-                  </button>
-
-                  <div className="text-xs text-gray-500 text-center">
-                    Payment will be processed after confirmation
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Select a chiller to see booking details</p>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 mt-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full flex items-center px-4 py-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Wallet className="h-5 w-5 text-blue-600 mr-3" />
-                  <div>
-                    <p className="font-medium text-gray-900">My Wallet</p>
-                    <p className="text-sm text-gray-500">Balance: ₹1,250</p>
-                  </div>
+        {/* Add Money Modal */}
+        {showAddMoneyModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Add Money to Wallet</h2>
+                <button 
+                  onClick={() => setShowAddMoneyModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
                 </button>
-                <button className="w-full flex items-center px-4 py-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Clock className="h-5 w-5 text-green-600 mr-3" />
-                  <div>
-                    <p className="font-medium text-gray-900">Active Bookings</p>
-                    <p className="text-sm text-gray-500">2 chillers in use</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
+                  <input
+                    type="number"
+                    value={addAmount}
+                    onChange={(e) => setAddAmount(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter amount"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  {[100, 500, 1000].map(amount => (
+                    <button
+                      key={amount}
+                      onClick={() => setAddAmount(amount.toString())}
+                      className="py-2 px-3 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      ₹{amount}
+                    </button>
+                  ))}
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                  <div className="space-y-2">
+                    {[
+                      { id: 'upi', label: 'UPI Payment', icon: <Smartphone className="h-4 w-4" /> },
+                      { id: 'card', label: 'Demo Card', icon: <CreditCard className="h-4 w-4" /> },
+                      { id: 'paytm', label: 'Paytm Wallet', icon: <Wallet className="h-4 w-4" /> }
+                    ].map(method => (
+                      <label key={method.id} className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          value={method.id}
+                          checked={paymentMethod === method.id}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                        />
+                        <div className="ml-3 flex items-center">
+                          {method.icon}
+                          <span className="ml-2 text-sm font-medium text-gray-900">{method.label}</span>
+                        </div>
+                      </label>
+                    ))}
                   </div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-4 mt-6">
+                <button
+                  onClick={() => setShowAddMoneyModal(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddMoney}
+                  className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Add Money
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

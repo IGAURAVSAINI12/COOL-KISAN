@@ -11,11 +11,82 @@ import {
   Clock,
   Star,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Trash2,
+  Save,
+  X,
+  Phone,
+  Mail,
+  Bell,
+  Shield,
+  CreditCard,
+  Wallet
 } from 'lucide-react';
 
 const ChillerOwnerApp = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [showAddChillerModal, setShowAddChillerModal] = useState(false);
+  const [editingChiller, setEditingChiller] = useState(null);
+  const [chillers, setChillers] = useState([
+    {
+      id: 1,
+      name: 'Main Village Chiller',
+      type: 'Fixed',
+      capacity: '500L',
+      used: '340L',
+      temperature: '-2°C',
+      status: 'Active',
+      rate: '₹1.2/L',
+      bookings: 12,
+      earnings: '₹4,080',
+      location: 'Village Center, Main Road',
+      phone: '+91 98765 43210'
+    },
+    {
+      id: 2,
+      name: 'Mobile Unit #1',
+      type: 'Mobile',
+      capacity: '200L',
+      used: '150L',
+      temperature: '-3°C',
+      status: 'En Route',
+      rate: '₹1.5/L',
+      bookings: 5,
+      earnings: '₹1,125',
+      location: 'Currently at Sector 12',
+      phone: '+91 98765 43211'
+    }
+  ]);
+
+  const [newChiller, setNewChiller] = useState({
+    name: '',
+    type: 'Fixed',
+    capacity: '',
+    rate: '',
+    location: '',
+    phone: '',
+    temperature: '-2'
+  });
+
+  const [settings, setSettings] = useState({
+    notifications: {
+      email: true,
+      sms: true,
+      push: true
+    },
+    profile: {
+      name: 'Ramesh Kumar',
+      email: 'ramesh@example.com',
+      phone: '+91 98765 43210',
+      address: 'Village Center, Main Road'
+    },
+    business: {
+      businessName: 'Kumar Dairy Solutions',
+      gst: 'GST123456789',
+      bankAccount: 'XXXX-XXXX-1234'
+    }
+  });
 
   const stats = [
     { 
@@ -48,33 +119,6 @@ const ChillerOwnerApp = () => {
     }
   ];
 
-  const chillers = [
-    {
-      id: 1,
-      name: 'Main Village Chiller',
-      type: 'Fixed',
-      capacity: '500L',
-      used: '340L',
-      temperature: '-2°C',
-      status: 'Active',
-      rate: '₹1.2/L',
-      bookings: 12,
-      earnings: '₹4,080'
-    },
-    {
-      id: 2,
-      name: 'Mobile Unit #1',
-      type: 'Mobile',
-      capacity: '200L',
-      used: '150L',
-      temperature: '-3°C',
-      status: 'En Route',
-      rate: '₹1.5/L',
-      bookings: 5,
-      earnings: '₹1,125'
-    }
-  ];
-
   const recentBookings = [
     {
       id: 1,
@@ -83,7 +127,8 @@ const ChillerOwnerApp = () => {
       duration: '8 hours',
       amount: '₹60',
       status: 'Active',
-      timeLeft: '3h 45m'
+      timeLeft: '3h 45m',
+      chillerId: 1
     },
     {
       id: 2,
@@ -92,7 +137,8 @@ const ChillerOwnerApp = () => {
       duration: '12 hours',
       amount: '₹54',
       status: 'Completed',
-      timeLeft: 'Completed'
+      timeLeft: 'Completed',
+      chillerId: 1
     },
     {
       id: 3,
@@ -101,9 +147,82 @@ const ChillerOwnerApp = () => {
       duration: '6 hours',
       amount: '₹67.5',
       status: 'Pending',
-      timeLeft: 'Awaiting confirmation'
+      timeLeft: 'Awaiting confirmation',
+      chillerId: 2
     }
   ];
+
+  const handleAddChiller = () => {
+    if (!newChiller.name || !newChiller.capacity || !newChiller.rate) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const chiller = {
+      id: Date.now(),
+      ...newChiller,
+      capacity: `${newChiller.capacity}L`,
+      rate: `₹${newChiller.rate}/L`,
+      temperature: `${newChiller.temperature}°C`,
+      used: '0L',
+      status: 'Active',
+      bookings: 0,
+      earnings: '₹0'
+    };
+
+    setChillers([...chillers, chiller]);
+    setNewChiller({
+      name: '',
+      type: 'Fixed',
+      capacity: '',
+      rate: '',
+      location: '',
+      phone: '',
+      temperature: '-2'
+    });
+    setShowAddChillerModal(false);
+    alert('Chiller added successfully!');
+  };
+
+  const handleEditChiller = (chiller) => {
+    setEditingChiller({
+      ...chiller,
+      capacity: chiller.capacity.replace('L', ''),
+      rate: chiller.rate.replace('₹', '').replace('/L', ''),
+      temperature: chiller.temperature.replace('°C', '')
+    });
+  };
+
+  const handleUpdateChiller = () => {
+    const updatedChillers = chillers.map(c => 
+      c.id === editingChiller.id 
+        ? {
+            ...editingChiller,
+            capacity: `${editingChiller.capacity}L`,
+            rate: `₹${editingChiller.rate}/L`,
+            temperature: `${editingChiller.temperature}°C`
+          }
+        : c
+    );
+    setChillers(updatedChillers);
+    setEditingChiller(null);
+    alert('Chiller updated successfully!');
+  };
+
+  const handleDeleteChiller = (id) => {
+    if (confirm('Are you sure you want to delete this chiller?')) {
+      setChillers(chillers.filter(c => c.id !== id));
+      alert('Chiller deleted successfully!');
+    }
+  };
+
+  const handleBookingAction = (bookingId, action) => {
+    alert(`Booking ${action} successfully!`);
+  };
+
+  const handleSettingsUpdate = () => {
+    alert('Settings updated successfully!');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pt-4">
@@ -116,7 +235,10 @@ const ChillerOwnerApp = () => {
               <p className="text-gray-600 mt-1">Manage your chillers and track earnings</p>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center">
+              <button 
+                onClick={() => setShowAddChillerModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Chiller
               </button>
@@ -239,7 +361,10 @@ const ChillerOwnerApp = () => {
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900">My Chillers</h2>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center">
+              <button 
+                onClick={() => setShowAddChillerModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add New Chiller
               </button>
@@ -252,10 +377,22 @@ const ChillerOwnerApp = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{chiller.name}</h3>
                       <p className="text-sm text-gray-600">{chiller.type} Chiller</p>
+                      <p className="text-sm text-gray-500 mt-1">{chiller.location}</p>
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <Settings className="h-5 w-5" />
-                    </button>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleEditChiller(chiller)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteChiller(chiller.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="space-y-3">
@@ -313,7 +450,7 @@ const ChillerOwnerApp = () => {
                           {booking.status}
                         </span>
                       </div>
-                      <div className="grid sm:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="grid sm:grid-cols-4 gap-4 text-sm text-gray-600">
                         <div>
                           <span className="block font-medium">Volume:</span>
                           <span>{booking.volume}</span>
@@ -326,23 +463,446 @@ const ChillerOwnerApp = () => {
                           <span className="block font-medium">Amount:</span>
                           <span className="text-green-600 font-semibold">{booking.amount}</span>
                         </div>
+                        <div>
+                          <span className="block font-medium">Chiller:</span>
+                          <span>{chillers.find(c => c.id === booking.chillerId)?.name}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       {booking.status === 'Pending' && (
                         <>
-                          <button className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                          <button 
+                            onClick={() => handleBookingAction(booking.id, 'accepted')}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                          >
                             Accept
                           </button>
-                          <button className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                          <button 
+                            onClick={() => handleBookingAction(booking.id, 'declined')}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                          >
                             Decline
                           </button>
                         </>
+                      )}
+                      {booking.status === 'Active' && (
+                        <button 
+                          onClick={() => handleBookingAction(booking.id, 'completed')}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                        >
+                          Mark Complete
+                        </button>
                       )}
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            {/* Profile Settings */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Profile Settings</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={settings.profile.name}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      profile: { ...settings.profile, name: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={settings.profile.email}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      profile: { ...settings.profile, email: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={settings.profile.phone}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      profile: { ...settings.profile, phone: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <input
+                    type="text"
+                    value={settings.profile.address}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      profile: { ...settings.profile, address: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Business Settings */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Business Settings</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
+                  <input
+                    type="text"
+                    value={settings.business.businessName}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      business: { ...settings.business, businessName: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">GST Number</label>
+                  <input
+                    type="text"
+                    value={settings.business.gst}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      business: { ...settings.business, gst: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bank Account</label>
+                  <input
+                    type="text"
+                    value={settings.business.bankAccount}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      business: { ...settings.business, bankAccount: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Notification Settings */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Notification Preferences</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Mail className="h-5 w-5 text-gray-500 mr-3" />
+                    <div>
+                      <p className="font-medium text-gray-900">Email Notifications</p>
+                      <p className="text-sm text-gray-500">Receive booking updates via email</p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.email}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      notifications: { ...settings.notifications, email: e.target.checked }
+                    })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Phone className="h-5 w-5 text-gray-500 mr-3" />
+                    <div>
+                      <p className="font-medium text-gray-900">SMS Notifications</p>
+                      <p className="text-sm text-gray-500">Receive booking updates via SMS</p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.sms}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      notifications: { ...settings.notifications, sms: e.target.checked }
+                    })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Bell className="h-5 w-5 text-gray-500 mr-3" />
+                    <div>
+                      <p className="font-medium text-gray-900">Push Notifications</p>
+                      <p className="text-sm text-gray-500">Receive instant app notifications</p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.notifications.push}
+                    onChange={(e) => setSettings({
+                      ...settings,
+                      notifications: { ...settings.notifications, push: e.target.checked }
+                    })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={handleSettingsUpdate}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Settings
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Add Chiller Modal */}
+        {showAddChillerModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Add New Chiller</h2>
+                <button 
+                  onClick={() => setShowAddChillerModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Chiller Name *</label>
+                  <input
+                    type="text"
+                    value={newChiller.name}
+                    onChange={(e) => setNewChiller({...newChiller, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., Village Center Chiller"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                  <select
+                    value={newChiller.type}
+                    onChange={(e) => setNewChiller({...newChiller, type: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="Fixed">Fixed Chiller</option>
+                    <option value="Mobile">Mobile Chiller</option>
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Capacity (L) *</label>
+                    <input
+                      type="number"
+                      value={newChiller.capacity}
+                      onChange={(e) => setNewChiller({...newChiller, capacity: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rate (₹/L) *</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={newChiller.rate}
+                      onChange={(e) => setNewChiller({...newChiller, rate: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="1.2"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={newChiller.location}
+                    onChange={(e) => setNewChiller({...newChiller, location: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Village Center, Main Road"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={newChiller.phone}
+                      onChange={(e) => setNewChiller({...newChiller, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="+91 98765 43210"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Temperature (°C)</label>
+                    <select
+                      value={newChiller.temperature}
+                      onChange={(e) => setNewChiller({...newChiller, temperature: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="-4">-4°C (Deep Freeze)</option>
+                      <option value="-3">-3°C (Premium)</option>
+                      <option value="-2">-2°C (Standard)</option>
+                      <option value="-1">-1°C (Basic)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-4 mt-6">
+                <button
+                  onClick={() => setShowAddChillerModal(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddChiller}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Add Chiller
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Chiller Modal */}
+        {editingChiller && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Edit Chiller</h2>
+                <button 
+                  onClick={() => setEditingChiller(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Chiller Name</label>
+                  <input
+                    type="text"
+                    value={editingChiller.name}
+                    onChange={(e) => setEditingChiller({...editingChiller, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                  <select
+                    value={editingChiller.type}
+                    onChange={(e) => setEditingChiller({...editingChiller, type: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="Fixed">Fixed Chiller</option>
+                    <option value="Mobile">Mobile Chiller</option>
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Capacity (L)</label>
+                    <input
+                      type="number"
+                      value={editingChiller.capacity}
+                      onChange={(e) => setEditingChiller({...editingChiller, capacity: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rate (₹/L)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={editingChiller.rate}
+                      onChange={(e) => setEditingChiller({...editingChiller, rate: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={editingChiller.location}
+                    onChange={(e) => setEditingChiller({...editingChiller, location: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={editingChiller.phone}
+                      onChange={(e) => setEditingChiller({...editingChiller, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Temperature (°C)</label>
+                    <select
+                      value={editingChiller.temperature}
+                      onChange={(e) => setEditingChiller({...editingChiller, temperature: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="-4">-4°C (Deep Freeze)</option>
+                      <option value="-3">-3°C (Premium)</option>
+                      <option value="-2">-2°C (Standard)</option>
+                      <option value="-1">-1°C (Basic)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex space-x-4 mt-6">
+                <button
+                  onClick={() => setEditingChiller(null)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateChiller}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Update Chiller
+                </button>
+              </div>
             </div>
           </div>
         )}
