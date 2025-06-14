@@ -16,7 +16,10 @@ import {
   RefreshCw,
   Target,
   Phone,
-  Info
+  Info,
+  Zap,
+  Plus,
+  Minus
 } from 'lucide-react';
 
 const MapView = () => {
@@ -25,16 +28,17 @@ const MapView = () => {
   const [selectedChiller, setSelectedChiller] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mapZoom, setMapZoom] = useState(12);
 
-  // Mock chiller data with coordinates
+  // Lucknow-specific chiller data with real area coordinates
   const chillers = [
     {
       id: 1,
-      name: 'Village Community Chiller',
+      name: 'Hazratganj Community Chiller',
       type: 'Fixed',
       owner: 'Ramesh Kumar',
       distance: '1.2 km',
-      coordinates: { lat: 28.6139, lng: 77.2090 },
+      coordinates: { lat: 26.8467, lng: 80.9462 }, // Hazratganj area
       capacity: '500L',
       available: '350L',
       rate: '₹1.2/L',
@@ -43,17 +47,18 @@ const MapView = () => {
       temperature: '-2°C',
       status: 'Available',
       phone: '+91 98765 43210',
-      address: 'Village Road, Sector 12',
+      address: 'Hazratganj Market, Near GPO',
       features: ['24/7 Access', 'Quality Monitoring', 'SMS Alerts'],
-      nextAvailable: 'Now'
+      nextAvailable: 'Now',
+      area: 'Hazratganj'
     },
     {
       id: 2,
-      name: 'Mobile Chiller Express',
+      name: 'Gomti Nagar Mobile Chiller',
       type: 'Mobile',
       owner: 'CoolTruck Services',
       distance: '2.5 km',
-      coordinates: { lat: 28.6289, lng: 77.2065 },
+      coordinates: { lat: 26.8512, lng: 81.0036 }, // Gomti Nagar
       capacity: '200L',
       available: '200L',
       rate: '₹1.5/L',
@@ -62,17 +67,18 @@ const MapView = () => {
       temperature: '-3°C',
       status: 'En Route',
       phone: '+91 98765 43211',
-      address: 'Mobile Unit - Current Location',
+      address: 'Gomti Nagar Extension, Sector 12',
       features: ['Door-to-Door', 'Rapid Cooling', 'GPS Tracking'],
-      nextAvailable: '15 mins'
+      nextAvailable: '15 mins',
+      area: 'Gomti Nagar'
     },
     {
       id: 3,
-      name: 'Cooperative Dairy Chiller',
+      name: 'Aminabad Dairy Cooperative',
       type: 'Fixed',
-      owner: 'Milk Cooperative',
+      owner: 'Milk Cooperative Society',
       distance: '3.8 km',
-      coordinates: { lat: 28.5989, lng: 77.2295 },
+      coordinates: { lat: 26.8506, lng: 80.9214 }, // Aminabad
       capacity: '800L',
       available: '120L',
       rate: '₹1.0/L',
@@ -81,17 +87,18 @@ const MapView = () => {
       temperature: '-2°C',
       status: 'Limited',
       phone: '+91 98765 43212',
-      address: 'Cooperative Society, Main Market',
+      address: 'Aminabad Market, Main Road',
       features: ['Bulk Capacity', 'Member Discounts', 'Quality Reports'],
-      nextAvailable: 'Now'
+      nextAvailable: 'Now',
+      area: 'Aminabad'
     },
     {
       id: 4,
-      name: 'Premium Cold Storage',
+      name: 'Alambagh Premium Storage',
       type: 'Fixed',
       owner: 'FreshKeep Solutions',
       distance: '4.2 km',
-      coordinates: { lat: 28.6339, lng: 77.1910 },
+      coordinates: { lat: 26.8206, lng: 80.8856 }, // Alambagh
       capacity: '1000L',
       available: '750L',
       rate: '₹2.0/L',
@@ -100,17 +107,18 @@ const MapView = () => {
       temperature: '-4°C',
       status: 'Available',
       phone: '+91 98765 43213',
-      address: 'Industrial Area, Phase 2',
+      address: 'Alambagh Bus Station Area',
       features: ['Deep Freeze', 'Premium Service', 'Insurance Coverage'],
-      nextAvailable: 'Now'
+      nextAvailable: 'Now',
+      area: 'Alambagh'
     },
     {
       id: 5,
-      name: 'Quick Chill Station',
+      name: 'Charbagh Railway Chiller',
       type: 'Fixed',
-      owner: 'Rajesh Patel',
+      owner: 'Railway Dairy Services',
       distance: '5.1 km',
-      coordinates: { lat: 28.5839, lng: 77.2190 },
+      coordinates: { lat: 26.8393, lng: 80.9231 }, // Charbagh
       capacity: '300L',
       available: '0L',
       rate: '₹1.3/L',
@@ -119,9 +127,30 @@ const MapView = () => {
       temperature: '-2°C',
       status: 'Full',
       phone: '+91 98765 43214',
-      address: 'Highway Junction, Near Petrol Pump',
-      features: ['Quick Access', 'Highway Location', 'Truck Parking'],
-      nextAvailable: '2 hours'
+      address: 'Charbagh Railway Station Complex',
+      features: ['Quick Access', 'Railway Location', 'Transport Hub'],
+      nextAvailable: '2 hours',
+      area: 'Charbagh'
+    },
+    {
+      id: 6,
+      name: 'Indira Nagar Express Chiller',
+      type: 'Fixed',
+      owner: 'Quick Cool Solutions',
+      distance: '3.5 km',
+      coordinates: { lat: 26.8769, lng: 80.9739 }, // Indira Nagar
+      capacity: '400L',
+      available: '280L',
+      rate: '₹1.4/L',
+      rating: 4.5,
+      reviews: 67,
+      temperature: '-3°C',
+      status: 'Available',
+      phone: '+91 98765 43215',
+      address: 'Indira Nagar, Faizabad Road',
+      features: ['Express Service', 'Quality Assured', 'Digital Monitoring'],
+      nextAvailable: 'Now',
+      area: 'Indira Nagar'
     }
   ];
 
@@ -135,7 +164,8 @@ const MapView = () => {
   const filteredChillers = chillers.filter(chiller => {
     const matchesSearch = chiller.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          chiller.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         chiller.address.toLowerCase().includes(searchQuery.toLowerCase());
+                         chiller.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         chiller.area.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesFilter = selectedFilter === 'all' ||
                          (selectedFilter === 'available' && chiller.status === 'Available') ||
@@ -146,9 +176,9 @@ const MapView = () => {
   });
 
   useEffect(() => {
-    // Simulate loading user location
+    // Simulate loading user location (Lucknow center)
     setTimeout(() => {
-      setUserLocation({ lat: 28.6139, lng: 77.2090 });
+      setUserLocation({ lat: 26.8467, lng: 80.9462 }); // Lucknow center coordinates
       setIsLoading(false);
     }, 1500);
   }, []);
@@ -164,8 +194,22 @@ const MapView = () => {
   };
 
   const handleBookChiller = (chiller) => {
-    // Navigate to booking page with chiller data
     console.log('Booking chiller:', chiller);
+  };
+
+  const getChillerIcon = (chiller) => {
+    if (chiller.type === 'Mobile') {
+      return <Truck className="h-4 w-4" />;
+    }
+    return <Snowflake className="h-4 w-4" />;
+  };
+
+  const getChillerColor = (chiller) => {
+    if (chiller.status === 'Available') return 'bg-green-500';
+    if (chiller.status === 'Limited') return 'bg-yellow-500';
+    if (chiller.status === 'En Route') return 'bg-blue-500';
+    if (chiller.status === 'Full') return 'bg-red-500';
+    return 'bg-gray-500';
   };
 
   if (isLoading) {
@@ -173,7 +217,7 @@ const MapView = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Finding nearby chillers...</p>
+          <p className="text-gray-600">Finding nearby chillers in Lucknow...</p>
         </div>
       </div>
     );
@@ -190,7 +234,7 @@ const MapView = () => {
                 <ArrowLeft className="h-6 w-6 text-gray-600 hover:text-gray-800" />
               </Link>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Find Nearby Chillers</h1>
+                <h1 className="text-xl font-semibold text-gray-900">Chillers in Lucknow</h1>
                 <p className="text-sm text-gray-600">{filteredChillers.length} chillers found</p>
               </div>
             </div>
@@ -214,7 +258,7 @@ const MapView = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, owner, or location..."
+                  placeholder="Search by area, name, or owner..."
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -246,6 +290,22 @@ const MapView = () => {
               </div>
             </div>
 
+            {/* Lucknow Areas */}
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <h3 className="font-semibold text-gray-900 mb-4">Popular Areas</h3>
+              <div className="space-y-2">
+                {['Hazratganj', 'Gomti Nagar', 'Aminabad', 'Alambagh', 'Indira Nagar', 'Charbagh'].map((area) => (
+                  <button
+                    key={area}
+                    onClick={() => setSearchQuery(area)}
+                    className="w-full text-left p-2 rounded-lg hover:bg-gray-50 text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    📍 {area}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Quick Stats */}
             <div className="bg-white rounded-xl shadow-sm p-4">
               <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
@@ -262,7 +322,7 @@ const MapView = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Total Capacity:</span>
-                  <span className="font-medium">2.8K L</span>
+                  <span className="font-medium">3.2K L</span>
                 </div>
               </div>
             </div>
@@ -270,20 +330,50 @@ const MapView = () => {
 
           {/* Map and Results */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Interactive Map */}
+            {/* Interactive Lucknow Map */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="h-80 bg-gradient-to-br from-blue-100 to-green-100 relative">
-                {/* Mock Map Interface */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="h-12 w-12 text-blue-600 mx-auto mb-2" />
-                    <p className="text-gray-600 font-medium">Interactive Map</p>
-                    <p className="text-sm text-gray-500">Showing {filteredChillers.length} nearby chillers</p>
-                  </div>
+              <div className="h-80 bg-gradient-to-br from-green-100 via-blue-100 to-purple-100 relative">
+                {/* Lucknow Map Background */}
+                <div className="absolute inset-0 opacity-20">
+                  <svg viewBox="0 0 400 300" className="w-full h-full">
+                    {/* Gomti River representation */}
+                    <path
+                      d="M50 150 Q150 120 250 140 Q300 150 350 160"
+                      stroke="#3B82F6"
+                      strokeWidth="3"
+                      fill="none"
+                      opacity="0.6"
+                    />
+                    {/* Major roads */}
+                    <line x1="0" y1="150" x2="400" y2="150" stroke="#6B7280" strokeWidth="2" opacity="0.4" />
+                    <line x1="200" y1="0" x2="200" y2="300" stroke="#6B7280" strokeWidth="2" opacity="0.4" />
+                    <line x1="100" y1="50" x2="300" y2="250" stroke="#6B7280" strokeWidth="1" opacity="0.3" />
+                  </svg>
+                </div>
+
+                {/* Map Title */}
+                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3">
+                  <h3 className="font-semibold text-gray-900 flex items-center">
+                    <MapPin className="h-5 w-5 text-blue-600 mr-2" />
+                    Lucknow Chiller Network
+                  </h3>
+                  <p className="text-sm text-gray-600">Real-time availability</p>
                 </div>
                 
                 {/* Map Controls */}
                 <div className="absolute top-4 right-4 space-y-2">
+                  <button 
+                    onClick={() => setMapZoom(Math.min(mapZoom + 1, 16))}
+                    className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                  >
+                    <Plus className="h-5 w-5 text-gray-600" />
+                  </button>
+                  <button 
+                    onClick={() => setMapZoom(Math.max(mapZoom - 1, 8))}
+                    className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                  >
+                    <Minus className="h-5 w-5 text-gray-600" />
+                  </button>
                   <button className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow">
                     <RefreshCw className="h-5 w-5 text-gray-600" />
                   </button>
@@ -292,21 +382,83 @@ const MapView = () => {
                   </button>
                 </div>
 
-                {/* Mock Map Markers */}
-                <div className="absolute top-1/4 left-1/3 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="bg-green-500 text-white p-2 rounded-full shadow-lg animate-pulse">
-                    <Snowflake className="h-4 w-4" />
+                {/* Chiller Markers on Map */}
+                {filteredChillers.map((chiller, index) => {
+                  // Calculate position based on coordinates (simplified mapping)
+                  const x = ((chiller.coordinates.lng - 80.85) * 2000) + 200;
+                  const y = ((26.87 - chiller.coordinates.lat) * 2000) + 150;
+                  
+                  return (
+                    <div
+                      key={chiller.id}
+                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 hover:scale-110 ${
+                        selectedChiller?.id === chiller.id ? 'scale-125 z-20' : 'z-10'
+                      }`}
+                      style={{ 
+                        left: `${Math.max(10, Math.min(90, (x / 400) * 100))}%`, 
+                        top: `${Math.max(10, Math.min(90, (y / 300) * 100))}%` 
+                      }}
+                      onClick={() => setSelectedChiller(chiller)}
+                    >
+                      <div className={`${getChillerColor(chiller)} text-white p-2 rounded-full shadow-lg ${
+                        chiller.status === 'Available' ? 'animate-pulse' : ''
+                      }`}>
+                        {getChillerIcon(chiller)}
+                      </div>
+                      {selectedChiller?.id === chiller.id && (
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-lg shadow-lg p-3 min-w-48 z-30">
+                          <h4 className="font-semibold text-gray-900 text-sm">{chiller.name}</h4>
+                          <p className="text-xs text-gray-600">{chiller.area}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(chiller.status)}`}>
+                              {chiller.status}
+                            </span>
+                            <span className="text-sm font-medium text-green-600">{chiller.rate}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* User Location Marker */}
+                {userLocation && (
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <div className="bg-red-500 text-white p-3 rounded-full shadow-lg animate-ping">
+                      <Target className="h-4 w-4" />
+                    </div>
+                    <div className="absolute top-0 left-0 bg-red-600 text-white p-3 rounded-full shadow-lg">
+                      <Target className="h-4 w-4" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Legend */}
+                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3">
+                  <h4 className="font-semibold text-gray-900 text-sm mb-2">Legend</h4>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                      <span>Available</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                      <span>Limited</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                      <span>Mobile/En Route</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                      <span>Full/Your Location</span>
+                    </div>
                   </div>
                 </div>
-                <div className="absolute top-1/2 right-1/3 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="bg-blue-500 text-white p-2 rounded-full shadow-lg">
-                    <Truck className="h-4 w-4" />
-                  </div>
-                </div>
-                <div className="absolute bottom-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="bg-purple-500 text-white p-2 rounded-full shadow-lg">
-                    <Snowflake className="h-4 w-4" />
-                  </div>
+
+                {/* Zoom Level Indicator */}
+                <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
+                  <span className="text-xs text-gray-600">Zoom: {mapZoom}</span>
                 </div>
               </div>
             </div>
@@ -347,6 +499,9 @@ const MapView = () => {
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1 text-green-500" />
                           {chiller.nextAvailable}
+                        </div>
+                        <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                          {chiller.area}
                         </div>
                       </div>
                     </div>
@@ -431,7 +586,7 @@ const MapView = () => {
                 <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No chillers found</h3>
                 <p className="text-gray-600 mb-4">
-                  Try adjusting your search criteria or filters to find more options.
+                  Try adjusting your search criteria or filters to find more options in Lucknow.
                 </p>
                 <button
                   onClick={() => {
