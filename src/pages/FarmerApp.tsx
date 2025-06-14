@@ -59,15 +59,15 @@ const FarmerApp = () => {
   // Fetch wallet, bookings, and transactions for this farmer from db.json
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch('http://localhost:3000/');
-      const data = await res.json();
-      if (user) {
-        setWalletBalance(
-          (data.wallets || []).find((w) => w.farmerId === user.id)?.balance || 0
-        );
-        setBookings((data.bookings || []).filter((b) => b.farmerId === user.id));
-        setTransactions((data.transactions || []).filter((t) => t.farmerId === user.id));
-      }
+      const res = await fetch('http://localhost:3000/wallets');
+      const wallets = await res.json();
+      setWalletBalance(wallets.find((w) => w.farmerId === user.id)?.balance || 0);
+      const bookingsRes = await fetch('http://localhost:3000/bookings');
+      const bookingsData = await bookingsRes.json();
+      setBookings(bookingsData.filter((b) => b.farmerId === user.id));
+      const transactionsRes = await fetch('http://localhost:3000/transactions');
+      const transactionsData = await transactionsRes.json();
+      setTransactions(transactionsData.filter((t) => t.farmerId === user.id));
     };
     fetchData();
   }, [user]);
@@ -137,8 +137,8 @@ const FarmerApp = () => {
       setShowAddMoneyModal(true);
       return;
     }
-    const res = await fetch('http://localhost:3000/');
-    const data = await res.json();
+    const res = await fetch('http://localhost:3000/bookings');
+    const bookingsData = await res.json();
     const newBooking = {
       id: `CK-2024-${String(Date.now()).slice(-6)}`,
       farmerId: user.id,
@@ -159,8 +159,14 @@ const FarmerApp = () => {
       paymentMethod: 'Wallet',
       transactionId: `TXN${Date.now()}`
     };
-    const updatedBookings = [newBooking, ...(data.bookings || [])];
+    await fetch('http://localhost:3000/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBooking)
+    });
     // Add transaction
+    const transactionsRes = await fetch('http://localhost:3000/transactions');
+    const transactionsData = await transactionsRes.json();
     const newTransaction = {
       id: newBooking.transactionId,
       farmerId: user.id,
@@ -171,19 +177,23 @@ const FarmerApp = () => {
       time: newBooking.time,
       bookingId: newBooking.id
     };
-    const updatedTransactions = [newTransaction, ...(data.transactions || [])];
-    // Update wallet
-    const updatedWallets = (data.wallets || []).map((w) =>
-      w.farmerId === user.id ? { ...w, balance: w.balance - totalCost } : w
-    );
-    await fetch('http://localhost:3000/', {
+    await fetch('http://localhost:3000/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, bookings: updatedBookings, transactions: updatedTransactions, wallets: updatedWallets })
+      body: JSON.stringify(newTransaction)
     });
-    setBookings(updatedBookings.filter((b) => b.farmerId === user.id));
-    setTransactions(updatedTransactions.filter((t) => t.farmerId === user.id));
-    setWalletBalance(updatedWallets.find((w) => w.farmerId === user.id)?.balance || 0);
+    // Update wallet
+    const walletToUpdate = wallets.find((w) => w.farmerId === user.id);
+    if (walletToUpdate) {
+      await fetch(`http://localhost:3000/wallets/${walletToUpdate.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: walletToUpdate.balance - totalCost })
+      });
+      setWalletBalance(walletToUpdate.balance - totalCost);
+    }
+    setBookings([...bookingsData.filter((b) => b.farmerId === user.id), newBooking]);
+    setTransactions([...transactionsData.filter((t) => t.farmerId === user.id), newTransaction]);
     setMilkVolume('');
     setSelectedChiller(null);
     alert(`Booking successful! ₹${totalCost} deducted from wallet. Your QR code: ${newBooking.qrCode}`);
@@ -197,9 +207,8 @@ const FarmerApp = () => {
       return;
     }
     const amount = parseFloat(addAmount);
-    const res = await fetch('http://localhost:3000/');
-    const data = await res.json();
-    // Add transaction
+    const res = await fetch('http://localhost:3000/transactions');
+    const transactionsData = await res.json();
     const newTransaction = {
       id: `TXN${Date.now()}`,
       farmerId: user.id,
@@ -210,23 +219,30 @@ const FarmerApp = () => {
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       bookingId: null
     };
-    const updatedTransactions = [newTransaction, ...(data.transactions || [])];
-    // Update wallet
-    let updatedWallets = data.wallets || [];
-    if (updatedWallets.some((w) => w.farmerId === user.id)) {
-      updatedWallets = updatedWallets.map((w) =>
-        w.farmerId === user.id ? { ...w, balance: w.balance + amount } : w
-      );
-    } else {
-      updatedWallets.push({ farmerId: user.id, balance: amount });
-    }
-    await fetch('http://localhost:3000/', {
+    await fetch('http://localhost:3000/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, transactions: updatedTransactions, wallets: updatedWallets })
+      body: JSON.stringify(newTransaction)
     });
-    setTransactions(updatedTransactions.filter((t) => t.farmerId === user.id));
-    setWalletBalance(updatedWallets.find((w) => w.farmerId === user.id)?.balance || 0);
+    // Update wallet
+    const walletToUpdate = wallets.find((w) => w.farmerId === user.id);
+    if (walletToUpdate) {
+      await fetch(`http://localhost:3000/wallets/${walletToUpdate.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: walletToUpdate.balance + amount })
+      });
+      setWalletBalance(walletToUpdate.balance + amount);
+    } else {
+      // Create new wallet
+      await fetch('http://localhost:3000/wallets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmerId: user.id, balance: amount })
+      });
+      setWalletBalance(amount);
+    }
+    setTransactions([...transactionsData.filter((t) => t.farmerId === user.id), newTransaction]);
     setAddAmount('');
     setShowAddMoneyModal(false);
     alert(`₹${amount} added to your wallet successfully!`);
@@ -250,9 +266,8 @@ const FarmerApp = () => {
       alert('Insufficient wallet balance for this deduction');
       return;
     }
-    const res = await fetch('http://localhost:3000/');
-    const data = await res.json();
-    // Add transaction
+    const res = await fetch('http://localhost:3000/transactions');
+    const transactionsData = await res.json();
     const newTransaction = {
       id: `TXN${Date.now()}`,
       farmerId: user.id,
@@ -263,18 +278,22 @@ const FarmerApp = () => {
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       bookingId: null
     };
-    const updatedTransactions = [newTransaction, ...(data.transactions || [])];
-    // Update wallet
-    const updatedWallets = (data.wallets || []).map((w) =>
-      w.farmerId === user.id ? { ...w, balance: w.balance - amount } : w
-    );
-    await fetch('http://localhost:3000/', {
+    await fetch('http://localhost:3000/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, transactions: updatedTransactions, wallets: updatedWallets })
+      body: JSON.stringify(newTransaction)
     });
-    setTransactions(updatedTransactions.filter((t) => t.farmerId === user.id));
-    setWalletBalance(updatedWallets.find((w) => w.farmerId === user.id)?.balance || 0);
+    // Update wallet
+    const walletToUpdate = wallets.find((w) => w.farmerId === user.id);
+    if (walletToUpdate) {
+      await fetch(`http://localhost:3000/wallets/${walletToUpdate.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance: walletToUpdate.balance - amount })
+      });
+      setWalletBalance(walletToUpdate.balance - amount);
+    }
+    setTransactions([...transactionsData.filter((t) => t.farmerId === user.id), newTransaction]);
     setDeductAmount('');
     setDeductReason('');
     setShowDeductMoneyModal(false);

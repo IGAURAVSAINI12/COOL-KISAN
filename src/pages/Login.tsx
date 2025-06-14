@@ -41,9 +41,8 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Simulate fetching users from db.json (replace with real API in production)
-    const response = await fetch('http://localhost:3000/');
-    const data = await response.json();
-    const users = data.users || [];
+    const response = await fetch('http://localhost:3000/users');
+    const users = await response.json();
     if (isLogin) {
       // Login logic
       const found = users.find(
@@ -79,10 +78,10 @@ const Login = () => {
       };
       users.push(newUser);
       // Save to db.json (simulate, in real app use API)
-      await fetch('http://localhost:3000/', {
+      await fetch('http://localhost:3000/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ users })
+        body: JSON.stringify(newUser)
       });
       login(newUser, true);
       if (newUser.userType === 'farmer') navigate('/farmer');

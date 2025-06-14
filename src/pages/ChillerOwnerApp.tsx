@@ -47,7 +47,7 @@ const ChillerOwnerApp = () => {
   // Fetch chillers for this owner from db.json
   useEffect(() => {
     const fetchChillers = async () => {
-      const res = await fetch('http://localhost:3000/');
+      const res = await fetch('http://localhost:3000/chillers');
       const data = await res.json();
       if (user) {
         setChillers((data.chillers || []).filter((c) => c.ownerId === user.id));
@@ -155,7 +155,7 @@ const ChillerOwnerApp = () => {
       alert('Please fill in all required fields');
       return;
     }
-    const res = await fetch('http://localhost:3000/');
+    const res = await fetch('http://localhost:3000/chillers');
     const data = await res.json();
     const newId = data.chillers && data.chillers.length ? Math.max(...data.chillers.map(c => c.id)) + 1 : 1;
     const chiller = {
@@ -171,7 +171,7 @@ const ChillerOwnerApp = () => {
       earnings: '₹0'
     };
     const updatedChillers = [...(data.chillers || []), chiller];
-    await fetch('http://localhost:3000/', {
+    await fetch('http://localhost:3000/chillers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...data, chillers: updatedChillers })
@@ -202,7 +202,7 @@ const ChillerOwnerApp = () => {
 
   // Update Chiller
   const handleUpdateChiller = async () => {
-    const res = await fetch('http://localhost:3000/');
+    const res = await fetch('http://localhost:3000/chillers');
     const data = await res.json();
     const updatedChillers = (data.chillers || []).map((c) =>
       c.id === editingChiller.id
@@ -214,7 +214,7 @@ const ChillerOwnerApp = () => {
           }
         : c
     );
-    await fetch('http://localhost:3000/', {
+    await fetch('http://localhost:3000/chillers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...data, chillers: updatedChillers })
@@ -227,10 +227,10 @@ const ChillerOwnerApp = () => {
   // Delete Chiller
   const handleDeleteChiller = async (id) => {
     if (!window.confirm('Are you sure you want to delete this chiller?')) return;
-    const res = await fetch('http://localhost:3000/');
+    const res = await fetch('http://localhost:3000/chillers');
     const data = await res.json();
     const updatedChillers = (data.chillers || []).filter((c) => c.id !== id);
-    await fetch('http://localhost:3000/', {
+    await fetch('http://localhost:3000/chillers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...data, chillers: updatedChillers })
