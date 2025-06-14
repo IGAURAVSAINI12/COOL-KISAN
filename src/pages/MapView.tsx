@@ -19,7 +19,8 @@ import {
   Info,
   Zap,
   Plus,
-  Minus
+  Minus,
+  Loader
 } from 'lucide-react';
 
 const MapView = () => {
@@ -27,8 +28,10 @@ const MapView = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedChiller, setSelectedChiller] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [mapZoom, setMapZoom] = useState(12);
+  const [locationError, setLocationError] = useState('');
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   // Lucknow-specific chiller data with real area coordinates
   const chillers = [
@@ -175,12 +178,96 @@ const MapView = () => {
     return matchesSearch && matchesFilter;
   });
 
+  // Calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    return distance;
+  };
+
+  // Update chiller distances based on user location
+  const updateChillerDistances = (userLat, userLng) => {
+    return chillers.map(chiller => {
+      const distance = calculateDistance(
+        userLat, 
+        userLng, 
+        chiller.coordinates.lat, 
+        chiller.coordinates.lng
+      );
+      return {
+        ...chiller,
+        distance: `${distance.toFixed(1)} km`,
+        actualDistance: distance
+      };
+    }).sort((a, b) => a.actualDistance - b.actualDistance);
+  };
+
+  // Get user's current location
+  const getUserLocation = () => {
+    setIsGettingLocation(true);
+    setLocationError('');
+
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by this browser');
+      setIsGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        
+        // Update chiller distances based on actual user location
+        const updatedChillers = updateChillerDistances(latitude, longitude);
+        
+        setIsGettingLocation(false);
+        console.log('Location updated:', { latitude, longitude });
+        
+        // Show success message
+        alert(`Location found! Showing chillers near your current position (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+      },
+      (error) => {
+        let errorMessage = '';
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location access denied by user';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information is unavailable';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out';
+            break;
+          default:
+            errorMessage = 'An unknown error occurred';
+            break;
+        }
+        setLocationError(errorMessage);
+        setIsGettingLocation(false);
+        
+        // Fallback to Lucknow center
+        setUserLocation({ lat: 26.8467, lng: 80.9462 });
+        alert(`Could not get your location: ${errorMessage}. Showing default Lucknow location.`);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  };
+
   useEffect(() => {
-    // Simulate loading user location (Lucknow center)
-    setTimeout(() => {
-      setUserLocation({ lat: 26.8467, lng: 80.9462 }); // Lucknow center coordinates
-      setIsLoading(false);
-    }, 1500);
+    // Set default location to Lucknow center
+    setUserLocation({ lat: 26.8467, lng: 80.9462 });
   }, []);
 
   const getStatusColor = (status) => {
@@ -212,17 +299,6 @@ const MapView = () => {
     return 'bg-gray-500';
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Finding nearby chillers in Lucknow...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -238,11 +314,26 @@ const MapView = () => {
                 <p className="text-sm text-gray-600">{filteredChillers.length} chillers found</p>
               </div>
             </div>
-            <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              <Target className="h-4 w-4" />
-              <span>Use My Location</span>
+            <button 
+              onClick={getUserLocation}
+              disabled={isGettingLocation}
+              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGettingLocation ? (
+                <Loader className="h-4 w-4 animate-spin" />
+              ) : (
+                <Target className="h-4 w-4" />
+              )}
+              <span>{isGettingLocation ? 'Getting Location...' : 'Use My Location'}</span>
             </button>
           </div>
+          {locationError && (
+            <div className="pb-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-700">{locationError}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -358,6 +449,11 @@ const MapView = () => {
                     Lucknow Chiller Network
                   </h3>
                   <p className="text-sm text-gray-600">Real-time availability</p>
+                  {userLocation && (
+                    <p className="text-xs text-green-600 mt-1">
+                      📍 Location: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+                    </p>
+                  )}
                 </div>
                 
                 {/* Map Controls */}
@@ -374,11 +470,15 @@ const MapView = () => {
                   >
                     <Minus className="h-5 w-5 text-gray-600" />
                   </button>
-                  <button className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                    <RefreshCw className="h-5 w-5 text-gray-600" />
+                  <button 
+                    onClick={getUserLocation}
+                    className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                    title="Get my location"
+                  >
+                    <Navigation className="h-5 w-5 text-gray-600" />
                   </button>
                   <button className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                    <Navigation className="h-5 w-5 text-gray-600" />
+                    <RefreshCw className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
 
