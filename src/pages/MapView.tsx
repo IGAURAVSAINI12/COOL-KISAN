@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Search, 
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 const MapView = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedChiller, setSelectedChiller] = useState(null);
@@ -280,8 +281,110 @@ const MapView = () => {
     }
   };
 
+  // Handle booking a chiller
   const handleBookChiller = (chiller) => {
-    console.log('Booking chiller:', chiller);
+    if (chiller.status === 'Full') {
+      alert('This chiller is currently full. Please try another chiller or wait for availability.');
+      return;
+    }
+
+    // Store selected chiller data for booking
+    const bookingData = {
+      type: 'pay-per-use',
+      chiller: chiller.name,
+      owner: chiller.owner,
+      distance: chiller.distance,
+      volume: '50L', // Default volume, user can change in farmer app
+      duration: '8 hours',
+      rate: chiller.rate,
+      subtotal: 60, // Will be calculated based on actual volume
+      platformFee: 6,
+      total: 66,
+      rating: chiller.rating,
+      temperature: chiller.temperature,
+      address: chiller.address,
+      phone: chiller.phone,
+      features: chiller.features,
+      chillerId: chiller.id
+    };
+
+    localStorage.setItem('selectedBooking', JSON.stringify(bookingData));
+    
+    // Navigate to farmer app for detailed booking
+    navigate('/farmer', { 
+      state: { 
+        preSelectedChiller: chiller,
+        fromMap: true 
+      }
+    });
+  };
+
+  // Handle calling chiller owner
+  const handleCallChiller = (chiller) => {
+    if (chiller.phone) {
+      window.open(`tel:${chiller.phone}`, '_self');
+    } else {
+      alert('Phone number not available for this chiller');
+    }
+  };
+
+  // Handle viewing chiller details
+  const handleViewDetails = (chiller) => {
+    const details = `
+🏢 ${chiller.name}
+👤 Owner: ${chiller.owner}
+📍 Location: ${chiller.address}
+📞 Phone: ${chiller.phone}
+🌡️ Temperature: ${chiller.temperature}
+💧 Available: ${chiller.available} of ${chiller.capacity}
+💰 Rate: ${chiller.rate} per 8 hours
+⭐ Rating: ${chiller.rating}/5 (${chiller.reviews} reviews)
+🚚 Type: ${chiller.type} Chiller
+⏰ Next Available: ${chiller.nextAvailable}
+
+Features:
+${chiller.features.map(f => `• ${f}`).join('\n')}
+
+Status: ${chiller.status}
+    `;
+    
+    alert(details);
+  };
+
+  // Handle quick booking with default values
+  const handleQuickBook = (chiller) => {
+    if (chiller.status === 'Full') {
+      alert('This chiller is currently full. Please try another chiller.');
+      return;
+    }
+
+    // Quick booking with default 50L for 8 hours
+    const rate = parseFloat(chiller.rate.replace('₹', '').replace('/L', ''));
+    const volume = 50;
+    const subtotal = rate * volume;
+    const platformFee = Math.round(subtotal * 0.1);
+    const total = subtotal + platformFee;
+
+    const bookingData = {
+      type: 'quick-book',
+      chiller: chiller.name,
+      owner: chiller.owner,
+      distance: chiller.distance,
+      volume: `${volume}L`,
+      duration: '8 hours',
+      rate: chiller.rate,
+      subtotal: subtotal,
+      platformFee: platformFee,
+      total: total,
+      rating: chiller.rating,
+      temperature: chiller.temperature,
+      address: chiller.address,
+      phone: chiller.phone,
+      chillerId: chiller.id
+    };
+
+    localStorage.setItem('selectedBooking', JSON.stringify(bookingData));
+    navigate('/payment');
   };
 
   const getChillerIcon = (chiller) => {
@@ -477,7 +580,10 @@ const MapView = () => {
                   >
                     <Navigation className="h-5 w-5 text-gray-600" />
                   </button>
-                  <button className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                  >
                     <RefreshCw className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
@@ -660,7 +766,7 @@ const MapView = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(`tel:${chiller.phone}`);
+                        handleCallChiller(chiller);
                       }}
                       className="bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center"
                     >
@@ -670,7 +776,7 @@ const MapView = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedChiller(selectedChiller?.id === chiller.id ? null : chiller);
+                        handleViewDetails(chiller);
                       }}
                       className="bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                     >
