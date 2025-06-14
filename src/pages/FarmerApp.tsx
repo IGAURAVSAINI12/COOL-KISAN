@@ -59,7 +59,7 @@ const FarmerApp = () => {
   // Fetch wallet, bookings, and transactions for this farmer from db.json
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch('/data/db.json');
+      const res = await fetch('http://localhost:3000/');
       const data = await res.json();
       if (user) {
         setWalletBalance(
@@ -137,7 +137,7 @@ const FarmerApp = () => {
       setShowAddMoneyModal(true);
       return;
     }
-    const res = await fetch('/data/db.json');
+    const res = await fetch('http://localhost:3000/');
     const data = await res.json();
     const newBooking = {
       id: `CK-2024-${String(Date.now()).slice(-6)}`,
@@ -176,7 +176,7 @@ const FarmerApp = () => {
     const updatedWallets = (data.wallets || []).map((w) =>
       w.farmerId === user.id ? { ...w, balance: w.balance - totalCost } : w
     );
-    await fetch('/data/db.json', {
+    await fetch('http://localhost:3000/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...data, bookings: updatedBookings, transactions: updatedTransactions, wallets: updatedWallets })
@@ -197,7 +197,7 @@ const FarmerApp = () => {
       return;
     }
     const amount = parseFloat(addAmount);
-    const res = await fetch('/data/db.json');
+    const res = await fetch('http://localhost:3000/');
     const data = await res.json();
     // Add transaction
     const newTransaction = {
@@ -220,7 +220,7 @@ const FarmerApp = () => {
     } else {
       updatedWallets.push({ farmerId: user.id, balance: amount });
     }
-    await fetch('/data/db.json', {
+    await fetch('http://localhost:3000/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...data, transactions: updatedTransactions, wallets: updatedWallets })
@@ -250,7 +250,7 @@ const FarmerApp = () => {
       alert('Insufficient wallet balance for this deduction');
       return;
     }
-    const res = await fetch('/data/db.json');
+    const res = await fetch('http://localhost:3000/');
     const data = await res.json();
     // Add transaction
     const newTransaction = {
@@ -268,7 +268,7 @@ const FarmerApp = () => {
     const updatedWallets = (data.wallets || []).map((w) =>
       w.farmerId === user.id ? { ...w, balance: w.balance - amount } : w
     );
-    await fetch('/data/db.json', {
+    await fetch('http://localhost:3000/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...data, transactions: updatedTransactions, wallets: updatedWallets })
