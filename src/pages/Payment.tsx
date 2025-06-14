@@ -14,9 +14,19 @@ import {
   Lock,
   QrCode
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Payment = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    } else if (user.userType !== 'farmer') {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [upiId, setUpiId] = useState('');
   const [cardDetails, setCardDetails] = useState({

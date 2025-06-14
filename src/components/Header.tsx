@@ -2,20 +2,35 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Snowflake, User, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
+  const { user, logout } = useAuth();
 
-  const navItems = [
+  let navItems = [
     { path: '/', label: t('nav.home') },
-    { path: '/farmer', label: t('nav.farmers') },
-    { path: '/chiller-owner', label: t('nav.chillerOwners') },
     { path: '/pricing', label: t('nav.pricing') },
     { path: '/about', label: t('nav.about') },
   ];
+  if (user?.userType === 'farmer') {
+    navItems = [
+      { path: '/', label: t('nav.home') },
+      { path: '/farmer', label: t('nav.farmers') },
+      { path: '/pricing', label: t('nav.pricing') },
+      { path: '/about', label: t('nav.about') },
+    ];
+  } else if (user?.userType === 'chiller-owner') {
+    navItems = [
+      { path: '/', label: t('nav.home') },
+      { path: '/chiller-owner', label: t('nav.chillerOwners') },
+      { path: '/pricing', label: t('nav.pricing') },
+      { path: '/about', label: t('nav.about') },
+    ];
+  }
 
   const languages = [
     { code: 'en', name: 'English', nativeName: 'English' },
@@ -88,14 +103,32 @@ const Header = () => {
                   </div>
                 )}
               </div>
-              
-              <Link
-                to="/login"
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                <User className="h-4 w-4" />
-                <span>{t('nav.login')}</span>
-              </Link>
+              {user ? (
+                <div className="relative group">
+                  <button className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+                    <User className="h-4 w-4" />
+                    <span>{user.name}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 hidden group-hover:block">
+                    <div className="px-4 py-2 text-sm text-gray-700">{user.email}</div>
+                    <button
+                      onClick={logout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  <span>{t('nav.login')}</span>
+                </Link>
+              )}
             </div>
           </nav>
 
@@ -127,7 +160,6 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
-            
             {/* Mobile Language Switcher */}
             <div className="px-3 py-2">
               <div className="text-sm font-medium text-gray-700 mb-2">Language / भाषा</div>
@@ -150,14 +182,29 @@ const Header = () => {
                 ))}
               </div>
             </div>
-            
-            <Link
-              to="/login"
-              className="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {t('nav.login')}
-            </Link>
+            {user ? (
+              <div className="block px-3 py-2 rounded-md text-base font-medium bg-blue-50 text-blue-700">
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span>{user.name}</span>
+                </div>
+                <div className="text-xs text-gray-500">{user.email}</div>
+                <button
+                  onClick={() => { logout(); setIsMenuOpen(false); }}
+                  className="mt-2 w-full text-left px-2 py-1 text-sm text-red-600 hover:bg-gray-100 rounded"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="block px-3 py-2 rounded-md text-base font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {t('nav.login')}
+              </Link>
+            )}
           </div>
         </div>
       )}

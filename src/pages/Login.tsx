@@ -10,10 +10,12 @@ import {
   Snowflake,
   ArrowRight
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -36,16 +38,55 @@ const Login = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login/signup logic here
-    console.log('Form submitted:', formData);
-    
-    // Redirect based on user type after successful login
-    if (formData.userType === 'farmer') {
-      navigate('/farmer');
-    } else if (formData.userType === 'chiller-owner') {
-      navigate('/chiller-owner');
+    // Simulate fetching users from db.json (replace with real API in production)
+    const response = await fetch('/data/db.json');
+    const data = await response.json();
+    const users = data.users || [];
+    if (isLogin) {
+      // Login logic
+      const found = users.find(
+        (u: any) =>
+          u.email === formData.email &&
+          u.password === formData.password &&
+          u.userType === formData.userType
+      );
+      if (found) {
+        login(found, (document.getElementById('remember-me') as HTMLInputElement)?.checked);
+        if (found.userType === 'farmer') navigate('/farmer');
+        else if (found.userType === 'chiller-owner') navigate('/chiller-owner');
+      } else {
+        alert('Invalid credentials');
+      }
+    } else {
+      // Signup logic
+      if (formData.password !== formData.confirmPassword) {
+        alert('Passwords do not match');
+        return;
+      }
+      if (users.some((u: any) => u.email === formData.email)) {
+        alert('Email already registered');
+        return;
+      }
+      const newUser = {
+        id: users.length ? users[users.length - 1].id + 1 : 1,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        userType: formData.userType
+      };
+      users.push(newUser);
+      // Save to db.json (simulate, in real app use API)
+      await fetch('/data/db.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users })
+      });
+      login(newUser, true);
+      if (newUser.userType === 'farmer') navigate('/farmer');
+      else if (newUser.userType === 'chiller-owner') navigate('/chiller-owner');
     }
   };
 

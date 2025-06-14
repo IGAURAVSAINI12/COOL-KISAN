@@ -26,14 +26,25 @@ import {
   Phone,
   Mail
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const FarmerApp = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  // Redirect if not logged in or not a farmer
+  React.useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    } else if (user.userType !== 'farmer') {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
   const [activeTab, setActiveTab] = useState('book');
   const [milkVolume, setMilkVolume] = useState('');
   const [duration, setDuration] = useState('8');
   const [selectedChiller, setSelectedChiller] = useState(null);
-  const [walletBalance, setWalletBalance] = useState(1250);
+  const [walletBalance, setWalletBalance] = useState(0);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
   const [showDeductMoneyModal, setShowDeductMoneyModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -42,76 +53,24 @@ const FarmerApp = () => {
   const [deductAmount, setDeductAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [deductReason, setDeductReason] = useState('');
-  const [bookings, setBookings] = useState([
-    {
-      id: 'CK-2024-001234',
-      chiller: 'Village Community Chiller',
-      owner: 'Ramesh Kumar',
-      ownerPhone: '+91 98765 43210',
-      ownerEmail: 'ramesh@example.com',
-      volume: '50L',
-      duration: '8 hours',
-      amount: 66,
-      status: 'Active',
-      date: '2024-01-15',
-      time: '09:30 AM',
-      qrCode: 'CK-2024-001234',
-      timeLeft: '3h 45m',
-      location: 'Village Center, Main Road',
-      temperature: '-2°C',
-      paymentMethod: 'Wallet',
-      transactionId: 'TXN123456789'
-    },
-    {
-      id: 'CK-2024-001233',
-      chiller: 'Mobile Chiller Express',
-      owner: 'CoolTruck Services',
-      ownerPhone: '+91 98765 43211',
-      ownerEmail: 'cooltruck@example.com',
-      volume: '30L',
-      duration: '12 hours',
-      amount: 54,
-      status: 'Completed',
-      date: '2024-01-14',
-      time: '02:15 PM',
-      qrCode: 'CK-2024-001233',
-      timeLeft: 'Completed',
-      location: 'Mobile Unit - Highway Junction',
-      temperature: '-3°C',
-      paymentMethod: 'UPI',
-      transactionId: 'TXN123456788'
-    }
-  ]);
+  const [bookings, setBookings] = useState([]);
+  const [transactions, setTransactions] = useState([]);
 
-  const [transactions, setTransactions] = useState([
-    {
-      id: 'TXN123456789',
-      type: 'debit',
-      amount: 66,
-      description: 'Chiller booking - Village Community Chiller',
-      date: '2024-01-15',
-      time: '09:30 AM',
-      bookingId: 'CK-2024-001234'
-    },
-    {
-      id: 'TXN123456788',
-      type: 'debit',
-      amount: 54,
-      description: 'Chiller booking - Mobile Chiller Express',
-      date: '2024-01-14',
-      time: '02:15 PM',
-      bookingId: 'CK-2024-001233'
-    },
-    {
-      id: 'TXN123456787',
-      type: 'credit',
-      amount: 500,
-      description: 'Wallet top-up via UPI',
-      date: '2024-01-13',
-      time: '11:20 AM',
-      bookingId: null
-    }
-  ]);
+  // Fetch wallet, bookings, and transactions for this farmer from db.json
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch('/data/db.json');
+      const data = await res.json();
+      if (user) {
+        setWalletBalance(
+          (data.wallets || []).find((w) => w.farmerId === user.id)?.balance || 0
+        );
+        setBookings((data.bookings || []).filter((b) => b.farmerId === user.id));
+        setTransactions((data.transactions || []).filter((t) => t.farmerId === user.id));
+      }
+    };
+    fetchData();
+  }, [user]);
 
   const nearbyChillers = [
     {
@@ -158,7 +117,8 @@ const FarmerApp = () => {
     return (baseRate * parseFloat(milkVolume)).toFixed(2);
   };
 
-  const handleBooking = () => {
+  // Add Booking
+  const handleBooking = async () => {
     // Validate inputs
     if (!milkVolume || parseFloat(milkVolume) <= 0) {
       alert('Please enter a valid milk volume');
@@ -171,20 +131,17 @@ const FarmerApp = () => {
     }
 
     const totalCost = Math.round(parseFloat(calculateCost()) * 1.1);
-
     // Check wallet balance
     if (walletBalance < totalCost) {
       alert(`Insufficient wallet balance. You need ₹${totalCost} but have ₹${walletBalance}. Please add money to your wallet.`);
       setShowAddMoneyModal(true);
       return;
     }
-
-    // Deduct amount from wallet
-    setWalletBalance(prev => prev - totalCost);
-
-    // Create new booking
+    const res = await fetch('/data/db.json');
+    const data = await res.json();
     const newBooking = {
       id: `CK-2024-${String(Date.now()).slice(-6)}`,
+      farmerId: user.id,
       chiller: selectedChiller.name,
       owner: selectedChiller.owner,
       ownerPhone: '+91 98765 43210',
@@ -202,12 +159,11 @@ const FarmerApp = () => {
       paymentMethod: 'Wallet',
       transactionId: `TXN${Date.now()}`
     };
-
-    setBookings([newBooking, ...bookings]);
-
-    // Add transaction record
+    const updatedBookings = [newBooking, ...(data.bookings || [])];
+    // Add transaction
     const newTransaction = {
       id: newBooking.transactionId,
+      farmerId: user.id,
       type: 'debit',
       amount: totalCost,
       description: `Chiller booking - ${selectedChiller.name}`,
@@ -215,29 +171,38 @@ const FarmerApp = () => {
       time: newBooking.time,
       bookingId: newBooking.id
     };
-
-    setTransactions([newTransaction, ...transactions]);
-
-    // Reset form
+    const updatedTransactions = [newTransaction, ...(data.transactions || [])];
+    // Update wallet
+    const updatedWallets = (data.wallets || []).map((w) =>
+      w.farmerId === user.id ? { ...w, balance: w.balance - totalCost } : w
+    );
+    await fetch('/data/db.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, bookings: updatedBookings, transactions: updatedTransactions, wallets: updatedWallets })
+    });
+    setBookings(updatedBookings.filter((b) => b.farmerId === user.id));
+    setTransactions(updatedTransactions.filter((t) => t.farmerId === user.id));
+    setWalletBalance(updatedWallets.find((w) => w.farmerId === user.id)?.balance || 0);
     setMilkVolume('');
     setSelectedChiller(null);
-
     alert(`Booking successful! ₹${totalCost} deducted from wallet. Your QR code: ${newBooking.qrCode}`);
     setActiveTab('bookings');
   };
 
-  const handleAddMoney = () => {
+  // Add Money
+  const handleAddMoney = async () => {
     if (!addAmount || parseFloat(addAmount) <= 0) {
       alert('Please enter a valid amount');
       return;
     }
-
     const amount = parseFloat(addAmount);
-    setWalletBalance(prev => prev + amount);
-
-    // Add transaction record
+    const res = await fetch('/data/db.json');
+    const data = await res.json();
+    // Add transaction
     const newTransaction = {
       id: `TXN${Date.now()}`,
+      farmerId: user.id,
       type: 'credit',
       amount: amount,
       description: `Wallet top-up via ${paymentMethod.toUpperCase()}`,
@@ -245,15 +210,30 @@ const FarmerApp = () => {
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       bookingId: null
     };
-
-    setTransactions([newTransaction, ...transactions]);
-
+    const updatedTransactions = [newTransaction, ...(data.transactions || [])];
+    // Update wallet
+    let updatedWallets = data.wallets || [];
+    if (updatedWallets.some((w) => w.farmerId === user.id)) {
+      updatedWallets = updatedWallets.map((w) =>
+        w.farmerId === user.id ? { ...w, balance: w.balance + amount } : w
+      );
+    } else {
+      updatedWallets.push({ farmerId: user.id, balance: amount });
+    }
+    await fetch('/data/db.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, transactions: updatedTransactions, wallets: updatedWallets })
+    });
+    setTransactions(updatedTransactions.filter((t) => t.farmerId === user.id));
+    setWalletBalance(updatedWallets.find((w) => w.farmerId === user.id)?.balance || 0);
     setAddAmount('');
     setShowAddMoneyModal(false);
     alert(`₹${amount} added to your wallet successfully!`);
   };
 
-  const handleDeductMoney = () => {
+  // Deduct Money
+  const handleDeductMoney = async () => {
     if (!deductAmount || parseFloat(deductAmount) <= 0) {
       alert('Please enter a valid amount');
       return;
@@ -270,12 +250,12 @@ const FarmerApp = () => {
       alert('Insufficient wallet balance for this deduction');
       return;
     }
-
-    setWalletBalance(prev => prev - amount);
-
-    // Add transaction record
+    const res = await fetch('/data/db.json');
+    const data = await res.json();
+    // Add transaction
     const newTransaction = {
       id: `TXN${Date.now()}`,
+      farmerId: user.id,
       type: 'debit',
       amount: amount,
       description: `Manual deduction - ${deductReason}`,
@@ -283,9 +263,18 @@ const FarmerApp = () => {
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       bookingId: null
     };
-
-    setTransactions([newTransaction, ...transactions]);
-
+    const updatedTransactions = [newTransaction, ...(data.transactions || [])];
+    // Update wallet
+    const updatedWallets = (data.wallets || []).map((w) =>
+      w.farmerId === user.id ? { ...w, balance: w.balance - amount } : w
+    );
+    await fetch('/data/db.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, transactions: updatedTransactions, wallets: updatedWallets })
+    });
+    setTransactions(updatedTransactions.filter((t) => t.farmerId === user.id));
+    setWalletBalance(updatedWallets.find((w) => w.farmerId === user.id)?.balance || 0);
     setDeductAmount('');
     setDeductReason('');
     setShowDeductMoneyModal(false);

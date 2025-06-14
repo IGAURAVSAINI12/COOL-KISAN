@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Settings, 
@@ -23,41 +23,38 @@ import {
   CreditCard,
   Wallet
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ChillerOwnerApp = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect if not logged in or not a chiller owner
+  React.useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    } else if (user.userType !== 'chiller-owner') {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showAddChillerModal, setShowAddChillerModal] = useState(false);
   const [editingChiller, setEditingChiller] = useState(null);
-  const [chillers, setChillers] = useState([
-    {
-      id: 1,
-      name: 'Main Village Chiller',
-      type: 'Fixed',
-      capacity: '500L',
-      used: '340L',
-      temperature: '-2°C',
-      status: 'Active',
-      rate: '₹1.2/L',
-      bookings: 12,
-      earnings: '₹4,080',
-      location: 'Village Center, Main Road',
-      phone: '+91 98765 43210'
-    },
-    {
-      id: 2,
-      name: 'Mobile Unit #1',
-      type: 'Mobile',
-      capacity: '200L',
-      used: '150L',
-      temperature: '-3°C',
-      status: 'En Route',
-      rate: '₹1.5/L',
-      bookings: 5,
-      earnings: '₹1,125',
-      location: 'Currently at Sector 12',
-      phone: '+91 98765 43211'
-    }
-  ]);
+  const [chillers, setChillers] = useState([]);
+
+  // Fetch chillers for this owner from db.json
+  useEffect(() => {
+    const fetchChillers = async () => {
+      const res = await fetch('/data/db.json');
+      const data = await res.json();
+      if (user) {
+        setChillers((data.chillers || []).filter((c) => c.ownerId === user.id));
+      }
+    };
+    fetchChillers();
+  }, [user]);
 
   const [newChiller, setNewChiller] = useState({
     name: '',
@@ -152,14 +149,18 @@ const ChillerOwnerApp = () => {
     }
   ];
 
-  const handleAddChiller = () => {
+  // Add Chiller
+  const handleAddChiller = async () => {
     if (!newChiller.name || !newChiller.capacity || !newChiller.rate) {
       alert('Please fill in all required fields');
       return;
     }
-
+    const res = await fetch('/data/db.json');
+    const data = await res.json();
+    const newId = data.chillers && data.chillers.length ? Math.max(...data.chillers.map(c => c.id)) + 1 : 1;
     const chiller = {
-      id: Date.now(),
+      id: newId,
+      ownerId: user.id,
       ...newChiller,
       capacity: `${newChiller.capacity}L`,
       rate: `₹${newChiller.rate}/L`,
@@ -169,8 +170,13 @@ const ChillerOwnerApp = () => {
       bookings: 0,
       earnings: '₹0'
     };
-
-    setChillers([...chillers, chiller]);
+    const updatedChillers = [...(data.chillers || []), chiller];
+    await fetch('/data/db.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, chillers: updatedChillers })
+    });
+    setChillers(updatedChillers.filter((c) => c.ownerId === user.id));
     setNewChiller({
       name: '',
       type: 'Fixed',
@@ -184,6 +190,7 @@ const ChillerOwnerApp = () => {
     alert('Chiller added successfully!');
   };
 
+  // Edit Chiller
   const handleEditChiller = (chiller) => {
     setEditingChiller({
       ...chiller,
@@ -193,9 +200,12 @@ const ChillerOwnerApp = () => {
     });
   };
 
-  const handleUpdateChiller = () => {
-    const updatedChillers = chillers.map(c => 
-      c.id === editingChiller.id 
+  // Update Chiller
+  const handleUpdateChiller = async () => {
+    const res = await fetch('/data/db.json');
+    const data = await res.json();
+    const updatedChillers = (data.chillers || []).map((c) =>
+      c.id === editingChiller.id
         ? {
             ...editingChiller,
             capacity: `${editingChiller.capacity}L`,
@@ -204,16 +214,29 @@ const ChillerOwnerApp = () => {
           }
         : c
     );
-    setChillers(updatedChillers);
+    await fetch('/data/db.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, chillers: updatedChillers })
+    });
+    setChillers(updatedChillers.filter((c) => c.ownerId === user.id));
     setEditingChiller(null);
     alert('Chiller updated successfully!');
   };
 
-  const handleDeleteChiller = (id) => {
-    if (confirm('Are you sure you want to delete this chiller?')) {
-      setChillers(chillers.filter(c => c.id !== id));
-      alert('Chiller deleted successfully!');
-    }
+  // Delete Chiller
+  const handleDeleteChiller = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this chiller?')) return;
+    const res = await fetch('/data/db.json');
+    const data = await res.json();
+    const updatedChillers = (data.chillers || []).filter((c) => c.id !== id);
+    await fetch('/data/db.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, chillers: updatedChillers })
+    });
+    setChillers(updatedChillers.filter((c) => c.ownerId === user.id));
+    alert('Chiller deleted successfully!');
   };
 
   const handleBookingAction = (bookingId, action) => {
