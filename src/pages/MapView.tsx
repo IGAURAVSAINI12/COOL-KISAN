@@ -524,29 +524,60 @@ Status: ${chiller.status}
 
           {/* Map and Results */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Interactive Lucknow Map */}
+            {/* Enhanced Interactive Lucknow Map */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="h-80 bg-gradient-to-br from-green-100 via-blue-100 to-purple-100 relative">
-                {/* Lucknow Map Background */}
-                <div className="absolute inset-0 opacity-20">
-                  <svg viewBox="0 0 400 300" className="w-full h-full">
-                    {/* Gomti River representation */}
+              <div className="h-96 relative bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
+                {/* Lucknow Map Background with better visualization */}
+                <div className="absolute inset-0">
+                  {/* Background pattern */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="w-full h-full" style={{
+                      backgroundImage: `
+                        radial-gradient(circle at 25% 25%, #3B82F6 2px, transparent 2px),
+                        radial-gradient(circle at 75% 75%, #10B981 2px, transparent 2px),
+                        linear-gradient(45deg, transparent 40%, rgba(59, 130, 246, 0.1) 50%, transparent 60%)
+                      `,
+                      backgroundSize: '50px 50px, 50px 50px, 100px 100px'
+                    }}></div>
+                  </div>
+                  
+                  {/* Gomti River representation */}
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 300">
+                    <defs>
+                      <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style={{stopColor:'#3B82F6', stopOpacity:0.6}} />
+                        <stop offset="50%" style={{stopColor:'#06B6D4', stopOpacity:0.8}} />
+                        <stop offset="100%" style={{stopColor:'#3B82F6', stopOpacity:0.6}} />
+                      </linearGradient>
+                    </defs>
+                    
+                    {/* Gomti River */}
                     <path
                       d="M50 150 Q150 120 250 140 Q300 150 350 160"
-                      stroke="#3B82F6"
-                      strokeWidth="3"
+                      stroke="url(#riverGradient)"
+                      strokeWidth="8"
                       fill="none"
-                      opacity="0.6"
+                      opacity="0.8"
                     />
+                    
                     {/* Major roads */}
-                    <line x1="0" y1="150" x2="400" y2="150" stroke="#6B7280" strokeWidth="2" opacity="0.4" />
-                    <line x1="200" y1="0" x2="200" y2="300" stroke="#6B7280" strokeWidth="2" opacity="0.4" />
-                    <line x1="100" y1="50" x2="300" y2="250" stroke="#6B7280" strokeWidth="1" opacity="0.3" />
+                    <line x1="0" y1="150" x2="400" y2="150" stroke="#6B7280" strokeWidth="3" opacity="0.5" />
+                    <line x1="200" y1="0" x2="200" y2="300" stroke="#6B7280" strokeWidth="3" opacity="0.5" />
+                    <line x1="100" y1="50" x2="300" y2="250" stroke="#6B7280" strokeWidth="2" opacity="0.4" />
+                    <line x1="300" y1="50" x2="100" y2="250" stroke="#6B7280" strokeWidth="2" opacity="0.4" />
+                    
+                    {/* Area labels */}
+                    <text x="120" y="100" fill="#374151" fontSize="12" fontWeight="bold" opacity="0.7">Hazratganj</text>
+                    <text x="280" y="80" fill="#374151" fontSize="12" fontWeight="bold" opacity="0.7">Gomti Nagar</text>
+                    <text x="80" y="180" fill="#374151" fontSize="12" fontWeight="bold" opacity="0.7">Aminabad</text>
+                    <text x="60" y="250" fill="#374151" fontSize="12" fontWeight="bold" opacity="0.7">Alambagh</text>
+                    <text x="160" y="200" fill="#374151" fontSize="12" fontWeight="bold" opacity="0.7">Charbagh</text>
+                    <text x="300" y="200" fill="#374151" fontSize="12" fontWeight="bold" opacity="0.7">Indira Nagar</text>
                   </svg>
                 </div>
 
                 {/* Map Title */}
-                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3">
+                <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg">
                   <h3 className="font-semibold text-gray-900 flex items-center">
                     <MapPin className="h-5 w-5 text-blue-600 mr-2" />
                     Lucknow Chiller Network
@@ -563,26 +594,26 @@ Status: ${chiller.status}
                 <div className="absolute top-4 right-4 space-y-2">
                   <button 
                     onClick={() => setMapZoom(Math.min(mapZoom + 1, 16))}
-                    className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                    className="bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                   >
                     <Plus className="h-5 w-5 text-gray-600" />
                   </button>
                   <button 
                     onClick={() => setMapZoom(Math.max(mapZoom - 1, 8))}
-                    className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                    className="bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                   >
                     <Minus className="h-5 w-5 text-gray-600" />
                   </button>
                   <button 
                     onClick={getUserLocation}
-                    className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                    className="bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                     title="Get my location"
                   >
                     <Navigation className="h-5 w-5 text-gray-600" />
                   </button>
                   <button 
                     onClick={() => window.location.reload()}
-                    className="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                    className="bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                   >
                     <RefreshCw className="h-5 w-5 text-gray-600" />
                   </button>
@@ -590,36 +621,84 @@ Status: ${chiller.status}
 
                 {/* Chiller Markers on Map */}
                 {filteredChillers.map((chiller, index) => {
-                  // Calculate position based on coordinates (simplified mapping)
-                  const x = ((chiller.coordinates.lng - 80.85) * 2000) + 200;
-                  const y = ((26.87 - chiller.coordinates.lat) * 2000) + 150;
+                  // Calculate position based on coordinates (improved mapping)
+                  const x = ((chiller.coordinates.lng - 80.85) * 1800) + 200;
+                  const y = ((26.87 - chiller.coordinates.lat) * 1800) + 150;
                   
                   return (
                     <div
                       key={chiller.id}
-                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 hover:scale-110 ${
-                        selectedChiller?.id === chiller.id ? 'scale-125 z-20' : 'z-10'
+                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 hover:scale-125 ${
+                        selectedChiller?.id === chiller.id ? 'scale-150 z-30' : 'z-20'
                       }`}
                       style={{ 
-                        left: `${Math.max(10, Math.min(90, (x / 400) * 100))}%`, 
-                        top: `${Math.max(10, Math.min(90, (y / 300) * 100))}%` 
+                        left: `${Math.max(5, Math.min(95, (x / 400) * 100))}%`, 
+                        top: `${Math.max(5, Math.min(95, (y / 300) * 100))}%` 
                       }}
-                      onClick={() => setSelectedChiller(chiller)}
+                      onClick={() => setSelectedChiller(selectedChiller?.id === chiller.id ? null : chiller)}
                     >
-                      <div className={`${getChillerColor(chiller)} text-white p-2 rounded-full shadow-lg ${
+                      <div className={`${getChillerColor(chiller)} text-white p-3 rounded-full shadow-xl border-2 border-white ${
                         chiller.status === 'Available' ? 'animate-pulse' : ''
                       }`}>
                         {getChillerIcon(chiller)}
                       </div>
+                      
+                      {/* Enhanced popup */}
                       {selectedChiller?.id === chiller.id && (
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white rounded-lg shadow-lg p-3 min-w-48 z-30">
-                          <h4 className="font-semibold text-gray-900 text-sm">{chiller.name}</h4>
-                          <p className="text-xs text-gray-600">{chiller.area}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(chiller.status)}`}>
-                              {chiller.status}
-                            </span>
-                            <span className="text-sm font-medium text-green-600">{chiller.rate}</span>
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-3 bg-white rounded-xl shadow-2xl p-4 min-w-64 z-40 border border-gray-200">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-semibold text-gray-900 text-sm">{chiller.name}</h4>
+                              <p className="text-xs text-gray-600">{chiller.area} • {chiller.distance}</p>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedChiller(null);
+                              }}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <Plus className="h-4 w-4 rotate-45" />
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-2 mb-3">
+                            <div className="flex items-center justify-between">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(chiller.status)}`}>
+                                {chiller.status}
+                              </span>
+                              <span className="text-sm font-medium text-green-600">{chiller.rate}</span>
+                            </div>
+                            <div className="flex items-center text-xs text-gray-600">
+                              <Droplets className="h-3 w-3 mr-1" />
+                              {chiller.available} available
+                            </div>
+                            <div className="flex items-center text-xs text-gray-600">
+                              <Thermometer className="h-3 w-3 mr-1" />
+                              {chiller.temperature}
+                            </div>
+                          </div>
+                          
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleBookChiller(chiller);
+                              }}
+                              disabled={chiller.status === 'Full'}
+                              className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {chiller.status === 'Full' ? 'Full' : 'Book'}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCallChiller(chiller);
+                              }}
+                              className="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
+                            >
+                              <Phone className="h-3 w-3" />
+                            </button>
                           </div>
                         </div>
                       )}
@@ -629,41 +708,43 @@ Status: ${chiller.status}
 
                 {/* User Location Marker */}
                 {userLocation && (
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <div className="bg-red-500 text-white p-3 rounded-full shadow-lg animate-ping">
-                      <Target className="h-4 w-4" />
-                    </div>
-                    <div className="absolute top-0 left-0 bg-red-600 text-white p-3 rounded-full shadow-lg">
-                      <Target className="h-4 w-4" />
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                    <div className="relative">
+                      <div className="bg-red-500 text-white p-3 rounded-full shadow-xl animate-ping opacity-75">
+                        <Target className="h-4 w-4" />
+                      </div>
+                      <div className="absolute top-0 left-0 bg-red-600 text-white p-3 rounded-full shadow-xl border-2 border-white">
+                        <Target className="h-4 w-4" />
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* Legend */}
-                <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3">
+                {/* Enhanced Legend */}
+                <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg">
                   <h4 className="font-semibold text-gray-900 text-sm mb-2">Legend</h4>
                   <div className="space-y-1 text-xs">
                     <div className="flex items-center">
-                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-2 border border-white"></div>
                       <span>Available</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2 border border-white"></div>
                       <span>Limited</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-2 border border-white"></div>
                       <span>Mobile/En Route</span>
                     </div>
                     <div className="flex items-center">
-                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2 border border-white"></div>
                       <span>Full/Your Location</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Zoom Level Indicator */}
-                <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
+                <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg px-3 py-1 shadow-lg">
                   <span className="text-xs text-gray-600">Zoom: {mapZoom}</span>
                 </div>
               </div>
@@ -677,7 +758,7 @@ Status: ${chiller.status}
                   className={`bg-white rounded-xl shadow-sm p-6 transition-all duration-300 hover:shadow-md cursor-pointer ${
                     selectedChiller?.id === chiller.id ? 'ring-2 ring-blue-500' : ''
                   }`}
-                  onClick={() => setSelectedChiller(chiller)}
+                  onClick={() => setSelectedChiller(selectedChiller?.id === chiller.id ? null : chiller)}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
