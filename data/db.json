@@ -1,7 +1,7 @@
 {
   "users": [
     {
-      "id": 1,
+      "id": "1",
       "name": "Farmer User",
       "email": "farmer@example.com",
       "phone": "+91 98765 43210",
@@ -9,44 +9,45 @@
       "userType": "farmer"
     },
     {
-      "id": 2,
+      "id": "2",
       "name": "Chiller Owner",
       "email": "chiller@example.com",
       "phone": "+91 91234 56789",
       "password": "chillerpass",
       "userType": "chiller-owner"
+    },
+    {
+      "id": "21",
+      "name": "Ashish Maurya",
+      "email": "pqrlink@gmail.com",
+      "phone": "11153132131",
+      "password": "hiarhj",
+      "userType": "farmer"
+    },
+    {
+      "id": "211",
+      "name": "Ashish Maurya",
+      "email": "pqrlink1@gmail.com",
+      "phone": "11153132131",
+      "password": "hiarhj",
+      "userType": "chiller-owner"
     }
   ],
   "chillers": [
     {
-      "id": 1,
-      "ownerId": 2,
-      "name": "Main Village Chiller",
+      "id": null,
+      "ownerId": "211",
+      "name": "jknn",
       "type": "Fixed",
-      "capacity": "500L",
-      "used": "340L",
+      "capacity": "52L",
+      "rate": "₹4/L",
+      "location": "m n ",
+      "phone": "9638527410",
       "temperature": "-2°C",
+      "used": "0L",
       "status": "Active",
-      "rate": "₹1.2/L",
-      "bookings": 12,
-      "earnings": "₹4,080",
-      "location": "Village Center, Main Road",
-      "phone": "+91 98765 43210"
-    },
-    {
-      "id": 2,
-      "ownerId": 2,
-      "name": "Mobile Unit #1",
-      "type": "Mobile",
-      "capacity": "200L",
-      "used": "150L",
-      "temperature": "-3°C",
-      "status": "En Route",
-      "rate": "₹1.5/L",
-      "bookings": 5,
-      "earnings": "₹1,125",
-      "location": "Currently at Sector 12",
-      "phone": "+91 98765 43211"
+      "bookings": 0,
+      "earnings": "₹0"
     }
   ],
   "bookings": [
@@ -91,6 +92,26 @@
       "temperature": "-3°C",
       "paymentMethod": "UPI",
       "transactionId": "TXN123456788"
+    },
+    {
+      "id": "CK-2024-229964",
+      "farmerId": "21",
+      "chiller": "Village Community Chiller",
+      "owner": "Ramesh Kumar",
+      "ownerPhone": "+91 98765 43210",
+      "ownerEmail": "owner@example.com",
+      "volume": "9L",
+      "duration": "8 hours",
+      "amount": 12,
+      "status": "Active",
+      "date": "2025-06-14",
+      "time": "10:43 PM",
+      "qrCode": "CK-2024-229964",
+      "timeLeft": "8h 0m",
+      "location": "Village Center, Main Road",
+      "temperature": "-2°C",
+      "paymentMethod": "Wallet",
+      "transactionId": "TXN1749921229964"
     }
   ],
   "transactions": [
@@ -123,12 +144,78 @@
       "date": "2024-01-13",
       "time": "11:20 AM",
       "bookingId": null
+    },
+    {
+      "id": "TXN1749920862450",
+      "farmerId": "21",
+      "type": "credit",
+      "amount": 100,
+      "description": "Wallet top-up via UPI",
+      "date": "2025-06-14",
+      "time": "10:37 PM",
+      "bookingId": null
+    },
+    {
+      "id": "TXN1749920863759",
+      "farmerId": "21",
+      "type": "credit",
+      "amount": 100,
+      "description": "Wallet top-up via UPI",
+      "date": "2025-06-14",
+      "time": "10:37 PM",
+      "bookingId": null
+    },
+    {
+      "id": "TXN1749920865041",
+      "farmerId": "21",
+      "type": "credit",
+      "amount": 100,
+      "description": "Wallet top-up via UPI",
+      "date": "2025-06-14",
+      "time": "10:37 PM",
+      "bookingId": null
+    },
+    {
+      "id": "TXN1749920875420",
+      "farmerId": "21",
+      "type": "credit",
+      "amount": 100,
+      "description": "Wallet top-up via UPI",
+      "date": "2025-06-14",
+      "time": "10:37 PM",
+      "bookingId": null
+    },
+    {
+      "id": "TXN1749921197245",
+      "farmerId": "21",
+      "type": "credit",
+      "amount": 100,
+      "description": "Wallet top-up via UPI",
+      "date": "2025-06-14",
+      "time": "10:43 PM",
+      "bookingId": null
+    },
+    {
+      "id": "TXN1749921229964",
+      "farmerId": "21",
+      "type": "debit",
+      "amount": 12,
+      "description": "Chiller booking - Village Community Chiller",
+      "date": "2025-06-14",
+      "time": "10:43 PM",
+      "bookingId": "CK-2024-229964"
     }
   ],
   "wallets": [
     {
       "farmerId": 1,
-      "balance": 1250
+      "balance": 1250,
+      "id": "39a1"
+    },
+    {
+      "id": "ef6e",
+      "farmerId": "21",
+      "balance": 88
     }
   ]
 }

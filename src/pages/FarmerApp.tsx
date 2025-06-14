@@ -55,61 +55,49 @@ const FarmerApp = () => {
   const [deductReason, setDeductReason] = useState('');
   const [bookings, setBookings] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [wallets, setWallets] = useState([]);
+  const [allChillers, setAllChillers] = useState([]);
+  const [balanceHistory, setBalanceHistory] = useState([]);
 
   // Fetch wallet, bookings, and transactions for this farmer from db.json
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch('http://localhost:3000/wallets');
-      const wallets = await res.json();
-      setWalletBalance(wallets.find((w) => w.farmerId === user.id)?.balance || 0);
+      if (!user) return;
+      // Fetch all chillers (handle both flat and nested structure)
+      const chillersRes = await fetch('http://localhost:3000/chillers');
+      let chillersData = await chillersRes.json();
+      // If chillers is an array of objects with a 'chillers' array inside, flatten it
+      if (Array.isArray(chillersData) && chillersData.length && chillersData[0].chillers) {
+        chillersData = chillersData.flatMap(obj => obj.chillers);
+      }
+      setAllChillers(chillersData);
+      // Fetch wallet, bookings, and transactions
+      const walletsRes = await fetch('http://localhost:3000/wallets');
+      const walletsData = await walletsRes.json();
+      setWallets(walletsData);
+      setWalletBalance(walletsData.find((w) => w.farmerId === user.id)?.balance || 0);
       const bookingsRes = await fetch('http://localhost:3000/bookings');
       const bookingsData = await bookingsRes.json();
       setBookings(bookingsData.filter((b) => b.farmerId === user.id));
       const transactionsRes = await fetch('http://localhost:3000/transactions');
       const transactionsData = await transactionsRes.json();
       setTransactions(transactionsData.filter((t) => t.farmerId === user.id));
+      // Calculate balance history
+      let balance = 0;
+      const history = transactionsData
+        .filter((t) => t.farmerId === user.id)
+        .sort((a, b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time))
+        .map((t) => {
+          if (t.type === 'credit') balance += t.amount;
+          else balance -= t.amount;
+          return { ...t, balanceAfter: balance };
+        });
+      setBalanceHistory(history);
     };
     fetchData();
   }, [user]);
 
-  const nearbyChillers = [
-    {
-      id: 1,
-      name: 'Village Community Chiller',
-      distance: '1.2 km',
-      capacity: '150L available',
-      rate: '₹1.2/L',
-      rating: 4.8,
-      owner: 'Ramesh Kumar',
-      type: 'Fixed',
-      temperature: '-2°C',
-      available: true
-    },
-    {
-      id: 2,
-      name: 'Mobile Chiller Express',
-      distance: '2.5 km',
-      capacity: '200L available',
-      rate: '₹1.5/L',
-      rating: 4.9,
-      owner: 'CoolTruck Services',
-      type: 'Mobile',
-      temperature: '-3°C',
-      available: true
-    },
-    {
-      id: 3,
-      name: 'Cooperative Dairy Chiller',
-      distance: '3.8 km',
-      capacity: '300L available',
-      rate: '₹1.0/L',
-      rating: 4.7,
-      owner: 'Milk Cooperative',
-      type: 'Fixed',
-      temperature: '-2°C',
-      available: false
-    }
-  ];
+  const nearbyChillers = allChillers.filter((c) => c.status === 'Active' || c.status === 'En Route');
 
   const calculateCost = () => {
     if (!milkVolume || !selectedChiller) return 0;
@@ -435,8 +423,8 @@ Date: ${booking.date}`);
                         selectedChiller?.id === chiller.id
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
-                      } ${!chiller.available ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={() => chiller.available && setSelectedChiller(chiller)}
+                      } ${!chiller.status || chiller.status !== 'Active' && chiller.status !== 'En Route' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => (chiller.status === 'Active' || chiller.status === 'En Route') && setSelectedChiller(chiller)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -449,11 +437,11 @@ Date: ${booking.date}`);
                                 </span>
                               )}
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                chiller.available 
-                                  ? 'bg-green-100 text-green-800' 
+                                chiller.status === 'Active' || chiller.status === 'En Route'
+                                  ? 'bg-green-100 text-green-800'
                                   : 'bg-red-100 text-red-800'
                               }`}>
-                                {chiller.available ? 'Available' : 'Full'}
+                                {chiller.status}
                               </span>
                             </div>
                           </div>
@@ -721,6 +709,28 @@ Date: ${booking.date}`);
                         {transaction.type === 'credit' ? '+' : '-'}₹{transaction.amount}
                       </p>
                       <p className="text-xs text-gray-500 capitalize">{transaction.type}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Balance History */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Balance History</h3>
+              <div className="space-y-3">
+                {balanceHistory.map((entry, idx) => (
+                  <div key={entry.id || idx} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">{entry.description}</p>
+                      <p className="text-sm text-gray-600">{entry.date} • {entry.time}</p>
+                      {entry.bookingId && (
+                        <p className="text-xs text-gray-500">Booking: {entry.bookingId}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-semibold ${entry.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>{entry.type === 'credit' ? '+' : '-'}₹{entry.amount}</p>
+                      <p className="text-xs text-gray-500 capitalize">Balance: ₹{entry.balanceAfter}</p>
                     </div>
                   </div>
                 ))}

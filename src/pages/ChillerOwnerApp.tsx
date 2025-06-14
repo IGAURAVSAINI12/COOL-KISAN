@@ -43,17 +43,32 @@ const ChillerOwnerApp = () => {
   const [showAddChillerModal, setShowAddChillerModal] = useState(false);
   const [editingChiller, setEditingChiller] = useState(null);
   const [chillers, setChillers] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [income, setIncome] = useState(0);
 
-  // Fetch chillers for this owner from db.json
+  // Fetch chillers and orders for this owner from db.json
   useEffect(() => {
-    const fetchChillers = async () => {
-      const res = await fetch('http://localhost:3000/chillers');
-      const data = await res.json();
-      if (user) {
-        setChillers((data.chillers || []).filter((c) => c.ownerId === user.id));
+    const fetchChillersAndOrders = async () => {
+      if (!user) return;
+      // Fetch chillers (handle nested structure)
+      const chillersRes = await fetch('http://localhost:3000/chillers');
+      let chillersData = await chillersRes.json();
+      if (Array.isArray(chillersData) && chillersData.length && chillersData[0].chillers) {
+        chillersData = chillersData.flatMap(obj => obj.chillers);
       }
+      // Only show chillers owned by this user
+      const userChillers = (chillersData || []).filter((c) => c.ownerId === user.id);
+      setChillers(userChillers);
+      // Fetch orders/bookings for this user's chillers
+      const bookingsRes = await fetch('http://localhost:3000/bookings');
+      const bookingsData = await bookingsRes.json();
+      const userOrders = (bookingsData || []).filter((b) => userChillers.some((c) => c.id === b.chillerId));
+      setOrders(userOrders);
+      // Calculate total income from completed orders
+      const totalIncome = userOrders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+      setIncome(totalIncome);
     };
-    fetchChillers();
+    fetchChillersAndOrders();
   }, [user]);
 
   const [newChiller, setNewChiller] = useState({
@@ -85,67 +100,28 @@ const ChillerOwnerApp = () => {
     }
   });
 
+  // In stats, show only this user's income
   const stats = [
     { 
       label: 'Total Earnings', 
-      value: '₹12,450', 
-      change: '+18%', 
-      icon: <DollarSign className="h-6 w-6 text-green-600" />,
+      value: `₹${income}`, 
+      change: '+0%', 
+      icon: <DollarSign className="h-6 w-6 text-green-600" />, // You can update change/trend as needed
       trend: 'up'
     },
     { 
       label: 'Active Bookings', 
-      value: '8', 
-      change: '+2', 
-      icon: <Users className="h-6 w-6 text-blue-600" />,
+      value: orders.filter(o => o.status === 'Active').length, 
+      change: '+0', 
+      icon: <Users className="h-6 w-6 text-blue-600" />, 
       trend: 'up'
     },
     { 
-      label: 'Capacity Used', 
-      value: '67%', 
-      change: '+12%', 
-      icon: <BarChart3 className="h-6 w-6 text-purple-600" />,
+      label: 'My Chillers', 
+      value: chillers.length, 
+      change: '+0', 
+      icon: <BarChart3 className="h-6 w-6 text-purple-600" />, 
       trend: 'up'
-    },
-    { 
-      label: 'Avg Rating', 
-      value: '4.8', 
-      change: '+0.2', 
-      icon: <Star className="h-6 w-6 text-yellow-500" />,
-      trend: 'up'
-    }
-  ];
-
-  const recentBookings = [
-    {
-      id: 1,
-      farmer: 'Rajesh Patel',
-      volume: '50L',
-      duration: '8 hours',
-      amount: '₹60',
-      status: 'Active',
-      timeLeft: '3h 45m',
-      chillerId: 1
-    },
-    {
-      id: 2,
-      farmer: 'Priya Sharma',
-      volume: '30L',
-      duration: '12 hours',
-      amount: '₹54',
-      status: 'Completed',
-      timeLeft: 'Completed',
-      chillerId: 1
-    },
-    {
-      id: 3,
-      farmer: 'Kumar Singh',
-      volume: '75L',
-      duration: '6 hours',
-      amount: '₹67.5',
-      status: 'Pending',
-      timeLeft: 'Awaiting confirmation',
-      chillerId: 2
     }
   ];
 
@@ -156,8 +132,8 @@ const ChillerOwnerApp = () => {
       return;
     }
     const res = await fetch('http://localhost:3000/chillers');
-    const data = await res.json();
-    const newId = data.chillers && data.chillers.length ? Math.max(...data.chillers.map(c => c.id)) + 1 : 1;
+    const chillersData = await res.json();
+    const newId = chillersData && chillersData.length ? Math.max(...chillersData.map(c => c.id)) + 1 : 1;
     const chiller = {
       id: newId,
       ownerId: user.id,
@@ -170,13 +146,12 @@ const ChillerOwnerApp = () => {
       bookings: 0,
       earnings: '₹0'
     };
-    const updatedChillers = [...(data.chillers || []), chiller];
     await fetch('http://localhost:3000/chillers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, chillers: updatedChillers })
+      body: JSON.stringify(chiller)
     });
-    setChillers(updatedChillers.filter((c) => c.ownerId === user.id));
+    setChillers([...chillers, chiller].filter((c) => c.ownerId === user.id));
     setNewChiller({
       name: '',
       type: 'Fixed',
@@ -203,23 +178,19 @@ const ChillerOwnerApp = () => {
   // Update Chiller
   const handleUpdateChiller = async () => {
     const res = await fetch('http://localhost:3000/chillers');
-    const data = await res.json();
-    const updatedChillers = (data.chillers || []).map((c) =>
-      c.id === editingChiller.id
-        ? {
-            ...editingChiller,
-            capacity: `${editingChiller.capacity}L`,
-            rate: `₹${editingChiller.rate}/L`,
-            temperature: `${editingChiller.temperature}°C`
-          }
-        : c
-    );
-    await fetch('http://localhost:3000/chillers', {
-      method: 'POST',
+    const chillersData = await res.json();
+    const updatedChiller = {
+      ...editingChiller,
+      capacity: `${editingChiller.capacity}L`,
+      rate: `₹${editingChiller.rate}/L`,
+      temperature: `${editingChiller.temperature}°C`
+    };
+    await fetch(`http://localhost:3000/chillers/${editingChiller.id}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, chillers: updatedChillers })
+      body: JSON.stringify(updatedChiller)
     });
-    setChillers(updatedChillers.filter((c) => c.ownerId === user.id));
+    setChillers(chillers.map((c) => c.id === editingChiller.id ? updatedChiller : c).filter((c) => c.ownerId === user.id));
     setEditingChiller(null);
     alert('Chiller updated successfully!');
   };
@@ -227,15 +198,10 @@ const ChillerOwnerApp = () => {
   // Delete Chiller
   const handleDeleteChiller = async (id) => {
     if (!window.confirm('Are you sure you want to delete this chiller?')) return;
-    const res = await fetch('http://localhost:3000/chillers');
-    const data = await res.json();
-    const updatedChillers = (data.chillers || []).filter((c) => c.id !== id);
-    await fetch('http://localhost:3000/chillers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, chillers: updatedChillers })
+    await fetch(`http://localhost:3000/chillers/${id}`, {
+      method: 'DELETE'
     });
-    setChillers(updatedChillers.filter((c) => c.ownerId === user.id));
+    setChillers(chillers.filter((c) => c.id !== id && c.ownerId === user.id));
     alert('Chiller deleted successfully!');
   };
 
@@ -323,22 +289,22 @@ const ChillerOwnerApp = () => {
             {/* Recent Activity */}
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Bookings</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Orders</h3>
                 <div className="space-y-4">
-                  {recentBookings.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  {orders.slice(0, 5).map((order) => (
+                    <div key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div>
-                        <p className="font-medium text-gray-900">{booking.farmer}</p>
-                        <p className="text-sm text-gray-600">{booking.volume} • {booking.duration}</p>
+                        <p className="font-medium text-gray-900">{order.farmerName || 'Farmer'}</p>
+                        <p className="text-sm text-gray-600">{order.volume} • {order.duration}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900">{booking.amount}</p>
+                        <p className="font-semibold text-gray-900">₹{order.amount}</p>
                         <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          booking.status === 'Active' ? 'bg-green-100 text-green-800' :
-                          booking.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                          order.status === 'Active' ? 'bg-green-100 text-green-800' :
+                          order.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
                           'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {booking.status}
+                          {order.status}
                         </span>
                       </div>
                     </div>
@@ -456,62 +422,61 @@ const ChillerOwnerApp = () => {
         {/* Bookings Tab */}
         {activeTab === 'bookings' && (
           <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Booking Requests</h2>
-            
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">My Orders</h2>
             <div className="space-y-4">
-              {recentBookings.map((booking) => (
-                <div key={booking.id} className="border border-gray-200 rounded-lg p-6">
+              {orders.map((order) => (
+                <div key={order.id} className="border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-4 mb-2">
-                        <h3 className="font-semibold text-gray-900">{booking.farmer}</h3>
+                        <h3 className="font-semibold text-gray-900">{order.farmerName || 'Farmer'}</h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          booking.status === 'Active' ? 'bg-green-100 text-green-800' :
-                          booking.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                          order.status === 'Active' ? 'bg-green-100 text-green-800' :
+                          order.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
                           'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {booking.status}
+                          {order.status}
                         </span>
                       </div>
                       <div className="grid sm:grid-cols-4 gap-4 text-sm text-gray-600">
                         <div>
                           <span className="block font-medium">Volume:</span>
-                          <span>{booking.volume}</span>
+                          <span>{order.volume}</span>
                         </div>
                         <div>
                           <span className="block font-medium">Duration:</span>
-                          <span>{booking.duration}</span>
+                          <span>{order.duration}</span>
                         </div>
                         <div>
                           <span className="block font-medium">Amount:</span>
-                          <span className="text-green-600 font-semibold">{booking.amount}</span>
+                          <span className="text-green-600 font-semibold">₹{order.amount}</span>
                         </div>
                         <div>
                           <span className="block font-medium">Chiller:</span>
-                          <span>{chillers.find(c => c.id === booking.chillerId)?.name}</span>
+                          <span>{chillers.find(c => c.id === order.chillerId)?.name}</span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {booking.status === 'Pending' && (
+                      {order.status === 'Pending' && (
                         <>
                           <button 
-                            onClick={() => handleBookingAction(booking.id, 'accepted')}
+                            onClick={() => handleBookingAction(order.id, 'accepted')}
                             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
                           >
                             Accept
                           </button>
                           <button 
-                            onClick={() => handleBookingAction(booking.id, 'declined')}
+                            onClick={() => handleBookingAction(order.id, 'declined')}
                             className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
                           >
                             Decline
                           </button>
                         </>
                       )}
-                      {booking.status === 'Active' && (
+                      {order.status === 'Active' && (
                         <button 
-                          onClick={() => handleBookingAction(booking.id, 'completed')}
+                          onClick={() => handleBookingAction(order.id, 'completed')}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
                         >
                           Mark Complete
