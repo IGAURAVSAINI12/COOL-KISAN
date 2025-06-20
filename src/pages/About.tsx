@@ -50,7 +50,7 @@ const About = () => {
     {
       name: 'Kunwar Aditya Singh',
       role: t('about.team.rajesh.role'),
-      description: t('about.team.rajesh.desc'),
+      description: 'Full-stack developer and tech innovator specializing in IoT solutions, mobile applications, and smart farming technologies that enhance agricultural productivity and farmer connectivity.',
     },
     {
       name: 'Funtastic Four',
