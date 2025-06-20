@@ -23,7 +23,7 @@ const Pricing = () => {
     {
       name: 'Standard Cooling',
       icon: <Snowflake className="h-8 w-8 text-blue-600" />,
-      baseRate: 1.0,
+      baseRate: 2.0,
       temperature: '-2°C to 0°C',
       description: 'Basic milk cooling for regular preservation',
       features: [
@@ -38,7 +38,7 @@ const Pricing = () => {
     {
       name: 'Premium Cooling',
       icon: <Zap className="h-8 w-8 text-purple-600" />,
-      baseRate: 1.5,
+      baseRate: 2.5,
       temperature: '-3°C to -1°C',
       description: 'Enhanced cooling with better temperature control',
       features: [
@@ -54,7 +54,7 @@ const Pricing = () => {
     {
       name: 'Express Cooling',
       icon: <Clock className="h-8 w-8 text-red-600" />,
-      baseRate: 2.0,
+      baseRate: 3.0,
       temperature: '-4°C to -2°C',
       description: 'Rapid cooling for urgent preservation needs',
       features: [
@@ -71,7 +71,7 @@ const Pricing = () => {
   ];
 
   const calculatePrice = () => {
-    const baseRate = pricingTiers.find(tier => tier.name.toLowerCase().includes(chillerType))?.baseRate || 1.0;
+    const baseRate = pricingTiers.find(tier => tier.name.toLowerCase().includes(chillerType))?.baseRate || 2.0;
     const volumeNum = parseFloat(volume) || 0;
     const durationNum = parseFloat(duration) || 8;
     
@@ -96,7 +96,7 @@ const Pricing = () => {
   const subscriptionPlans = [
     {
       name: 'Starter',
-      price: '₹299',
+      price: '₹599',
       period: '/month',
       volume: '500L',
       description: 'Perfect for small-scale farmers',
@@ -110,7 +110,7 @@ const Pricing = () => {
     },
     {
       name: 'Professional',
-      price: '₹799',
+      price: '₹1,499',
       period: '/month',
       volume: '1,500L',
       description: 'Ideal for medium-scale operations',
@@ -125,7 +125,7 @@ const Pricing = () => {
     },
     {
       name: 'Enterprise',
-      price: '₹1,999',
+      price: '₹3,999',
       period: '/month',
       volume: '5,000L',
       description: 'For large-scale dairy operations',
