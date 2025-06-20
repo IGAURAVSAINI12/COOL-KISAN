@@ -67,7 +67,7 @@ const translations = {
     'about.team.title': 'Meet Our Team',
     'about.team.subtitle': 'Local leaders committed to transforming Lucknow\'s dairy sector',
     'about.team.gaurav.role': 'Founder & CEO',
-    'about.team.gaurav.desc': 'Field Expert & 2 years of experience in Uttar Pradesh agriculture.',
+    'about.team.gaurav.desc': 'A web developer and ideation expert creating tech solutions that boost efficiency and connectivity for farmers and chiller owners..',
     'about.team.rajesh.role': 'Field Work Specialist',
     'about.team.rajesh.desc': 'Field Expert & 2 years of experience in Uttar Pradesh agriculture.',
     'about.team.anita.role': 'Head of Operations',
