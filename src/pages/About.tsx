@@ -50,7 +50,7 @@ const About = () => {
     {
       name: 'Kunwar Aditya Singh',
       role: t('about.team.rajesh.role'),
-      description: 'Field Expert and 2 years of experience in Uttar Pradesh agriculture..',
+      description: 'A web developer and ideation expert creating tech solutions that boost efficiency and connectivity for farmers and chiller owners...',
     },
     {
       name: 'Funtastic Four',
